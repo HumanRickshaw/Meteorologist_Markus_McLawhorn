@@ -80,7 +80,7 @@ gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool) {
 
 
 
-#Interactive helper
+#Interactive helper.  Set X, Y, size, and color from user input drop down selections.
 interactive <- function(data, i_x, i_y, i_s, i_c) {
     cnames <- colnames(data)
     x <- cnames[as.numeric(i_x)]
@@ -97,7 +97,7 @@ interactive <- function(data, i_x, i_y, i_s, i_c) {
     
     
 
-# Define UI for application that draws a histogram
+# Define UI for app.
 ui <- fluidPage(
 
     # Application title
@@ -117,6 +117,7 @@ ui <- fluidPage(
                                                   "Maff" = 4,
                                                   "Raw Data" = 5),
                                  selected = 3),
+                     
                      #Date is flexible for all choices.
                      sliderInput("date_in",
                                  "Date range :",
@@ -158,34 +159,25 @@ ui <- fluidPage(
                                                                         "Reactions" = 20,
                                                                         "Year" = 16)),
                      ),
-                     
-                     #Links
-                     conditionalPanel(condition = "input.display == 3",
-                         #selectInput()
-                     ),
-                     
-                     #Raw Data
-                     conditionalPanel(condition = "input.display == 4",
-                         #selectInput()
-                     )
         ),
 
-        # Show a plot of the generated distribution
+        # Show a plots and text based off of user selection.
         mainPanel(
-            #Distributions
+            
+            #Distributions.
             conditionalPanel(condition = "input.display == 1",
                              plotOutput("dist_plot")),
-            #Interactive
+            #Interactive.
             conditionalPanel(condition = "input.display == 2",
                              strong(span(textOutput("interactive_title"), align = "center", style = "font-size: 30px")),
                              plotOutput("inter_plot")),
-            #Links
+            #Links.
             conditionalPanel(condition = "input.display == 3",
                              br(),
                              strong(span(textOutput("links_title"), align = "center", style = "font-size: 30px")),
                              plotlyOutput("links_plot")),
             
-            #Maff
+            #Maff.
             conditionalPanel(condition = "input.display == 4",
                              strong(span(textOutput("maff_title"), align = "center", style = "font-size: 30px")),
                              br(),
@@ -285,7 +277,7 @@ ui <- fluidPage(
                                             href = "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R")),
                                   style = "font-size: 16px")),
             
-            #Raw Data
+            #Raw Data.
             conditionalPanel(condition = "input.display == 5",
                              strong(span(textOutput("rd_title"), align = "center", style = "font-size: 30px")),
                              br(),
@@ -413,7 +405,7 @@ server <- function(input, output) {
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
                 scale_x_discrete("What the Forecast???", expand = c(0,0)) +
-                scale_y_continuous("How many times he did it!", expand = c(0,0))
+                scale_y_continuous("How many times he did it!", breaks = c(0, 3, 6, 9, 12, 15), expand = c(0,0))
             #Viridis Color Scale.
             g1 <- g1 + scale_fill_viridis(discrete = TRUE)    
             #Transpose.
@@ -462,6 +454,7 @@ server <- function(input, output) {
         }
         
     },
+    #Bar Chart/Histogram size.
     width = 850,
     height = 550,
     res = 100
@@ -478,7 +471,7 @@ server <- function(input, output) {
         g2 <- g2 + geom_point()
         
         #Viridis Color Scale.
-        g2 <- g2 + scale_fill_viridis(discrete = TRUE)  
+        g2 <- g2 + scale_color_viridis()  
         
         
         #Modify labels and text.
@@ -490,6 +483,7 @@ server <- function(input, output) {
         
         g2
     },
+    #Bar Chart/Histogram size.
     width = 850,
     height = 550,
     res = 100
@@ -561,7 +555,7 @@ server <- function(input, output) {
 
     
     
-    #Maff
+    #Maff.
     output$maff_title <- renderText("Some numbers...")
         
     
@@ -577,5 +571,5 @@ server <- function(input, output) {
 
 
 
-# Run the application 
+# Run the app. 
 shinyApp(ui = ui, server = server)
