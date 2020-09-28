@@ -79,6 +79,7 @@ gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool) {
 }
 
 
+
 #Interactive helper
 interactive <- function(data, i_x, i_y, i_s, i_c) {
     cnames <- colnames(data)
@@ -100,7 +101,8 @@ interactive <- function(data, i_x, i_y, i_s, i_c) {
 ui <- fluidPage(
 
     # Application title
-    titlePanel(strong(span(tagList(a("Meteorologist Markus McLawhorn Presents...DENSE FOG",
+    titlePanel(strong(span(tagList("Meteorologist Markus McLawhorn Presents...",
+                                   a("DENSE FOG",
                                      href = "https://media0.giphy.com/media/3orieZMmRdBlKk5nY4/giphy.gif"))))),
 
     # Sidebar with output options.
@@ -236,7 +238,7 @@ ui <- fluidPage(
                              br(),
                              span("Over 70% of the posts were made between November and February.  Our winters would be colder. Much colder.", style = "font-size: 16px"),
                              br(),
-                             span("Over 50% of the posts were made in the past four years.  A safety in these dark times, if you will.", style = "font-size: 16px"),
+                             span("Over 50% of the posts were made in the past four years.  A safety beacon in these dark times, if you will.", style = "font-size: 16px"),
                              br(),
                              br(),
                              strong("Miscellaneous", style = "font-size: 24px"),
@@ -275,14 +277,24 @@ ui <- fluidPage(
                                           "is a memory of post on",
                                           a("January 21st, 2017.",
                                             href = "https://www.facebook.com/mark.mclawhorn/posts/10103980129400689")),
+                                  style = "font-size: 16px"),
+                             br(),
+                             br(),
+                             span(tagList("ShinyApp Source Code in R can be found ",
+                                          a("here.",
+                                            href = "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R")),
                                   style = "font-size: 16px")),
             
             #Raw Data
             conditionalPanel(condition = "input.display == 5",
                              strong(span(textOutput("rd_title"), align = "center", style = "font-size: 30px")),
                              br(),
-                             DTOutput("rd_table"))
-                             
+                             DTOutput("rd_table"),
+                             br(),
+                             span(tagList("ShinyApp Source Code in R can be found ",
+                                          a("here.",
+                                            href = "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R")),
+                                  style = "font-size: 16px")),
         )
     )
 )
@@ -425,8 +437,11 @@ server <- function(input, output) {
             g1 <- g1 + geom_histogram(bins = input$num_bins)
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_datetime("What Time of Day?", expand = c(0,0), breaks = date_breaks("3 hour"), labels = date_format("%H:%M")) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0), breaks = c(0, 4, 8, 12, 16, 20, 24))
+                scale_x_datetime("What Time of Day?", expand = c(0,0),
+                                 breaks = date_breaks("3 hour"),
+                                 labels = date_format("%H:%M")) +
+                scale_y_continuous("How Many Posts?", expand = c(0,0),
+                                   breaks = c(0, 4, 8, 12, 16, 20, 24))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
         }
@@ -438,7 +453,9 @@ server <- function(input, output) {
             g1 <- g1 + geom_histogram(binwidth = 1)
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_continuous("What Year?", expand = c(0,0), breaks = c(2008, 2011, 2014, 2017, 2020), labels = c(2008, 2011, 2014, 2017, 2020)) +
+                scale_x_continuous("What Year?", expand = c(0,0),
+                                   breaks = c(2008, 2011, 2014, 2017, 2020),
+                                   labels = c(2008, 2011, 2014, 2017, 2020)) +
                 scale_y_continuous("How Many Posts?", expand = c(0,0))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
@@ -460,7 +477,8 @@ server <- function(input, output) {
         g2 <- interactive(df_update(), input$x_axis, input$y_axis, input$size, input$color)
         g2 <- g2 + geom_point()
         
-
+        #Viridis Color Scale.
+        g2 <- g2 + scale_fill_viridis(discrete = TRUE)  
         
         
         #Modify labels and text.
