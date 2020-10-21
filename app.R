@@ -18,6 +18,17 @@ dfdf <- read_excel("./DENSE FOG.xlsx")
 
 
 
+#Create full FB post from unique post #.
+url_helper <- function(post_num) {
+    print(post_num)
+    print(typeof(post_num))
+    paste("https://www.facebook.com/mark.mclawhorn/posts/",
+          post_num,
+          sep = "")
+}
+
+
+
 #Create Year, Create Date, format Hovertext and URL for links.
 dfdf <- dfdf %>%
     mutate(Year = as.numeric(substr(Date, 1, 4)),
@@ -30,9 +41,7 @@ dfdf <- dfdf %>%
                              format(Date, "%A %B %d, %Y"),
                              format(Time, "%H:%M"),
                              sep = "<br>"),
-           URL = paste("https://www.facebook.com/mark.mclawhorn/posts/",
-                  Post,
-                  sep = ""))
+           URL = url_helper(Post))
 
 
 
@@ -93,6 +102,17 @@ interactive <- function(data, i_x, i_y, i_s, i_c) {
                     size = !!ensym(s),
                     color = !!ensym(c)))
     return(g)
+}
+
+
+
+#Github URL.
+source <- function() {
+    span(tagList("ShinyApp Source Code in R can be found ",
+                 a("here",
+                   href = "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R"),
+                 "."),
+         style = "font-size: 16px")
 }
     
     
@@ -183,7 +203,7 @@ ui <- fluidPage(
                              br(),
                              strong("Location", style = "font-size: 24px"),
                              br(),
-                             span(tagList("We assume Raleigh and the Triangle, but he is ",
+                             span(tagList("We assume Raleigh, but he is ",
                                           a("worldwide",
                                             href = "https://upload.wikimedia.org/wikipedia/commons/6/6b/Rotating_globe.gif"),
                                           "."),
@@ -191,20 +211,26 @@ ui <- fluidPage(
                              br(),
                              span(tagList("On May 4th, 2019 he posted from ",
                                           a("Asheville, NC",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10106177579962149"),
+                                            href = url_helper("10106177579962149")),
                                           "."),
                                   style = "font-size: 16px"),
                              br(),
-                             span(tagList("On November 29th, 2015 he posted from ",
+                             span(tagList("On January 21st, 2017 he ventured out to bougie ass ",
+                                          a("Cary, NC",
+                                            href = url_helper("10103980793270289")),
+                                          "."),
+                                  style = "font-size: 16px"),
+                             br(),
+                             span(tagList("On November 29th, 2015, visiting his roots, informed us from ",
                                           a("Mt. Afton, VA",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10102987182504229"),
+                                            href = url_helper("10102987182504229")),
                                           "."),
                                   style = "font-size: 16px"),
                              br(),
                              br(),
                              strong("Privacy", style = "font-size: 24px"),
                              br(),
-                             span("Over 65% of the posts are public.  He don't care about your political affiliation.", style = "font-size: 16px"),
+                             span("Over 60% of the posts are public.  He don't care about your political affiliation.", style = "font-size: 16px"),
                              br(),
                              br(),
                              strong("Social Engagement", style = "font-size: 24px"),
@@ -216,72 +242,74 @@ ui <- fluidPage(
                                   style = "font-size: 16px"),
                              br(),
                              span(tagList("Post on ",
+                                          a("October 19, 2020",
+                                            href = url_helper("10107757213443989")),
+                                          "had 21 reactions and 3 comments."),
+                                  style = "font-size: 16px"),
+                             br(),
+                             span(tagList("Post on ",
                                           a("February 20, 2018",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10105159621389289"),
+                                            href = url_helper("10105159621389289")),
                                           "had 17 reactions and 10 comments."),
                                   style = "font-size: 16px"),
                              br(),
                              span(tagList("Post on ",
                                           a("December 27, 2019",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10106816721841699"),
+                                            href = url_helper("10106816721841699")),
                                           "had 11 reactions and 13 comments."),
                                   style = "font-size: 16px"),
                              br(),
                              br(),
                              strong("When?", style = "font-size: 24px"),
                              br(),
-                             span("Over 70% of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.", style = "font-size: 16px"),
+                             span("About 75% of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.", style = "font-size: 16px"),
                              br(),
-                             span("Over 70% of the posts were made between November and February.  Our winters would be colder. Much colder.", style = "font-size: 16px"),
+                             span("Over 80% of the posts were made between October and February.  Our autumns & winters would be colder. Much colder.", style = "font-size: 16px"),
                              br(),
-                             span("Over 50% of the posts were made in the past four years.  A safety beacon in these dark times, if you will.", style = "font-size: 16px"),
+                             span("Over 60% of the posts were made in the past four years.  A safety beacon in these dark times, if you will.", style = "font-size: 16px"),
                              br(),
                              br(),
                              strong("Miscellaneous", style = "font-size: 24px"),
                              br(),
                              span(tagList("There was a ",
                                           a("morning post",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10102951989850589"),
+                                            href = url_helper("10102951989850589")),
                                           " and ",
                                           a("evening post",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10102953216297779"),
+                                            href = url_helper("10102953216297779")),
                                           " on November 5th, 2015."),
                                   style = "font-size: 16px"),
                              br(),
                              span(tagList("There was an ",
                                           a("early morning post",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10103980129400689"),
+                                            href = url_helper("10103980129400689")),
                                           " and ",
                                           a("late morning post",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10103980793270289"),
+                                            href = url_helper("10103980793270289")),
                                           " on January 21st, 2017."),
                                   style = "font-size: 16px"),
                              br(),
                              br(),
                              span(tagList("Post on ",
                                           a("December 16th, 2019",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10106785080975249"),
+                                            href = url_helper("10106785080975249")),
                                           "is a memory of post on",
                                           a("December 16th, 2008",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/40080784899"),
+                                            href = url_helper("40080784899")),
                                           ".  As far as the ancient texts tell us, this is the original DENSE FOG."),
                                   style = "font-size: 16px"),
                              br(),
                              span(tagList("Post on ",
                                           a("January 21st, 2020",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10106883961477929"),
+                                            href = url_helper("10106883961477929")),
                                           "is a memory of post on",
                                           a("January 21st, 2017",
-                                            href = "https://www.facebook.com/mark.mclawhorn/posts/10103980129400689"),
+                                            href = url_helper("10103980129400689")),
                                           "."),
                                   style = "font-size: 16px"),
                              br(),
                              br(),
-                             span(tagList("ShinyApp Source Code in R can be found ",
-                                          a("here",
-                                            href = "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R"),
-                                          "."),
-                                  style = "font-size: 16px")),
+                             source()),
             
             #Raw Data.
             conditionalPanel(condition = "input.display == 5",
@@ -289,11 +317,7 @@ ui <- fluidPage(
                              br(),
                              DTOutput("rd_table"),
                              br(),
-                             span(tagList("ShinyApp Source Code in R can be found ",
-                                          a("here",
-                                            href = "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R"),
-                                          "."),
-                                  style = "font-size: 16px")),
+                             source()),
         )
     )
 )
