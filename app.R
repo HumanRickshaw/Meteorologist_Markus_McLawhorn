@@ -40,13 +40,14 @@ dfdf <- dfdf %>%
                              format(Time, "%H:%M"),
                              sep = "<br>"),
            URL = url_helper(Post))
-print(dfdf)
+
 
 
 #Create for Reacts stacks.
 likes <- dfdf[c(1, 18, 6:12)] %>%
     gather(Reaction, Count, Like:Angry) %>%
     mutate(Reaction = ordered(Reaction, levels = c("Like", "Love", "Care", "Wow", "Haha", "Sad", "Angry")))
+
 
 
 #Viridis, Transpose, and Axes Info.
@@ -108,19 +109,13 @@ interactive <- function(data, i_x, i_y, i_s, i_c) {
 helper_df <- function(post_filter, boolean) {
 
     if (boolean) {
-        print("TRUE")
         temp <- dfdf %>%
             filter(Date == as.Date(post_filter,
                                    format = "%B %d, %Y")) 
     } else {
-        print
-        print(post_filter)
-        print(boolean)
         temp <- dfdf %>%
             filter(Post == post_filter)
-
     }
-    
     temp %>%
         select(Date, oTime, URL, Reactions, Comments, Reference, Post)
 }
