@@ -20,8 +20,6 @@ dfdf <- read_excel("./DENSE FOG.xlsx")
 
 #Create full FB post from unique post #.
 url_helper <- function(post_num) {
-    print(post_num)
-    print(typeof(post_num))
     paste("https://www.facebook.com/mark.mclawhorn/posts/",
           post_num,
           sep = "")
@@ -34,7 +32,7 @@ dfdf <- dfdf %>%
     mutate(Year = as.numeric(substr(Date, 1, 4)),
            Month = factor(as.numeric(substr(Date, 6, 7)), levels = 12:1, labels = rev(month.name)),
            Date = as.Date(Date),
-           oTime = strftime(Time, format = "%H:%M:%S", tz = "PST" ),
+           oTime = strftime(Time, format = "%H:%M:%S", tz = "UTC" ),
            Hour = as.integer(substr(oTime, 1, 2)),
            Reactions = rowSums(.[6:12]),
            Hovertext = paste(Text,
@@ -42,15 +40,13 @@ dfdf <- dfdf %>%
                              format(Time, "%H:%M"),
                              sep = "<br>"),
            URL = url_helper(Post))
-
-
+print(dfdf)
 
 
 #Create for Reacts stacks.
 likes <- dfdf[c(1, 18, 6:12)] %>%
     gather(Reaction, Count, Like:Angry) %>%
     mutate(Reaction = ordered(Reaction, levels = c("Like", "Love", "Care", "Wow", "Haha", "Sad", "Angry")))
-
 
 
 #Viridis, Transpose, and Axes Info.
@@ -106,13 +102,107 @@ interactive <- function(data, i_x, i_y, i_s, i_c) {
 
 
 
-#Github URL.
-source <- function() {
-    span(tagList("ShinyApp Source Code in R can be found ",
-                 a("here",
-                   href = "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R"),
-                 "."),
+#Dataframe for Maff outputs.
+#Takes in date when boolean is true,
+#takes in post when boolean is false.
+helper_df <- function(post_filter, boolean) {
+
+    if (boolean) {
+        print("TRUE")
+        temp <- dfdf %>%
+            filter(Date == as.Date(post_filter,
+                                   format = "%B %d, %Y")) 
+    } else {
+        print
+        print(post_filter)
+        print(boolean)
+        temp <- dfdf %>%
+            filter(Post == post_filter)
+
+    }
+    
+    temp %>%
+        select(Date, oTime, URL, Reactions, Comments, Reference, Post)
+}
+
+
+
+#Ready heading for output.
+heading <- function(string) {
+    strong(string,
+           style = "font-size: 24px")
+}
+
+
+
+#Ready text for output.
+span_style <- function(string) {
+    span(string,
          style = "font-size: 16px")
+}
+
+
+
+#General text with hyperlink.
+general_text <- function(string, anchor, hyperlink) {
+    span_style(tagList(string,
+                       a(anchor,
+                         href = hyperlink),
+                       "."))
+}
+
+
+
+#From Date, grab the URL, Reactions, and Comments.
+#Print a statement.
+social_helper <- function(post_date) {
+    temp <- helper_df(post_date, T)
+    
+    span_style(tagList("Post on ",
+                       a(post_date,
+                         href = temp[3]),
+                       paste("had",
+                             temp[4],
+                             "reactions and",
+                             temp[5],
+                             "comments.")))
+}
+
+#Create double statement given a date that has two DF posts.
+double_helper <- function(post_date) {
+    temp <- helper_df(post_date, T)
+    
+    span_style(tagList("There was a post at",
+                      a(substr(temp[1,2], 1, 5),
+                       href = temp[1,3]),
+                    " and ",
+                   a(substr(temp[2,2], 1, 5),
+                    href = temp[2,3]),
+                 paste(" on", post_date, ".")))
+}
+
+#Create a memory statement given a date that has a post with memory.
+memory_helper <- function(post_date) {
+    
+    temp <- helper_df(post_date, T)
+    temp2 <- helper_df(temp[[6]], F)
+
+    span_style(tagList("Post on ",
+                       a(post_date,
+                         href = temp[1,3]),
+                       " is a memory of post on ",
+                       a(format(temp2[[1]], "%B %d, %Y"),
+                         href = temp2[1,3]),
+                       "."))
+}
+
+
+
+#Github URL.
+source_code <- function() {
+    span_style(general_text("ShinyApp Source Code in R can be found ",
+                            "here",
+                            "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R"))
 }
     
     
@@ -201,115 +291,75 @@ ui <- fluidPage(
             conditionalPanel(condition = "input.display == 4",
                              strong(span(textOutput("maff_title"), align = "center", style = "font-size: 30px")),
                              br(),
-                             strong("Location", style = "font-size: 24px"),
+                             heading("Location"),
                              br(),
-                             span(tagList("We assume Raleigh, but he is ",
-                                          a("worldwide",
-                                            href = "https://upload.wikimedia.org/wikipedia/commons/6/6b/Rotating_globe.gif"),
-                                          "."),
-                                  style = "font-size: 16px"),
+                             general_text("We assume Raleigh, but he is ",
+                                          "worldwide",
+                                          "https://upload.wikimedia.org/wikipedia/commons/6/6b/Rotating_globe.gif"),
                              br(),
-                             span(tagList("On May 4th, 2019 he posted from ",
-                                          a("Asheville, NC",
-                                            href = url_helper("10106177579962149")),
-                                          "."),
-                                  style = "font-size: 16px"),
+                             general_text("On May 4th, 2019 he posted from ",
+                                          "Asheville, NC",
+                                          url_helper("10106177579962149")),
                              br(),
-                             span(tagList("On January 21st, 2017 he ventured out to bougie ass ",
-                                          a("Cary, NC",
-                                            href = url_helper("10103980793270289")),
-                                          "."),
-                                  style = "font-size: 16px"),
+                             general_text("On January 21st, 2017 he ventured out to bougie-ass ",
+                                          "Cary, NC",
+                                          url_helper("10103980793270289")),
                              br(),
-                             span(tagList("On November 29th, 2015, visiting his roots, informed us from ",
-                                          a("Mt. Afton, VA",
-                                            href = url_helper("10102987182504229")),
-                                          "."),
-                                  style = "font-size: 16px"),
+                             general_text("On November 29th, 2015, visiting his roots, he informed us from ",
+                                          "Mt. Afton, VA",
+                                          url_helper("10102987182504229")),
                              br(),
                              br(),
-                             strong("Privacy", style = "font-size: 24px"),
+                             heading("Privacy"),
                              br(),
-                             span("Over 60% of the posts are public.  He don't care about your political affiliation.", style = "font-size: 16px"),
-                             br(),
-                             br(),
-                             strong("Social Engagement", style = "font-size: 24px"),
-                             br(),
-                             span(tagList("FB introduced reactions on ",
-                                          a("February 24, 2016",
-                                            href = "https://www.theverge.com/2016/2/24/11094374/facebook-reactions-like-button"),
-                                          "."),
-                                  style = "font-size: 16px"),
-                             br(),
-                             span(tagList("Post on ",
-                                          a("October 19, 2020",
-                                            href = url_helper("10107757213443989")),
-                                          "had 21 reactions and 3 comments."),
-                                  style = "font-size: 16px"),
-                             br(),
-                             span(tagList("Post on ",
-                                          a("February 20, 2018",
-                                            href = url_helper("10105159621389289")),
-                                          "had 17 reactions and 10 comments."),
-                                  style = "font-size: 16px"),
-                             br(),
-                             span(tagList("Post on ",
-                                          a("December 27, 2019",
-                                            href = url_helper("10106816721841699")),
-                                          "had 11 reactions and 13 comments."),
-                                  style = "font-size: 16px"),
+                             span_style("Over 60% of the posts are public.  He don't care about your political affiliation."),
                              br(),
                              br(),
-                             strong("When?", style = "font-size: 24px"),
+                             heading("Social Engagement"),
                              br(),
-                             span("About 75% of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.", style = "font-size: 16px"),
+                             general_text("FB introduced reactions on ",
+                                          "February 24, 2016",
+                                          "https://www.theverge.com/2016/2/24/11094374/facebook-reactions-like-button"),
                              br(),
-                             span("Over 80% of the posts were made between October and February.  Our autumns & winters would be colder. Much colder.", style = "font-size: 16px"),
+                             social_helper("October 19, 2020"),
                              br(),
-                             span("Over 60% of the posts were made in the past four years.  A safety beacon in these dark times, if you will.", style = "font-size: 16px"),
+                             social_helper("February 20, 2018"),
                              br(),
+                             social_helper("December 27, 2019"),
                              br(),
-                             strong("Miscellaneous", style = "font-size: 24px"),
-                             br(),
-                             span(tagList("There was a ",
-                                          a("morning post",
-                                            href = url_helper("10102951989850589")),
-                                          " and ",
-                                          a("evening post",
-                                            href = url_helper("10102953216297779")),
-                                          " on November 5th, 2015."),
-                                  style = "font-size: 16px"),
-                             br(),
-                             span(tagList("There was an ",
-                                          a("early morning post",
-                                            href = url_helper("10103980129400689")),
-                                          " and ",
-                                          a("late morning post",
-                                            href = url_helper("10103980793270289")),
-                                          " on January 21st, 2017."),
-                                  style = "font-size: 16px"),
+                             social_helper("November 5, 2020"),
                              br(),
                              br(),
-                             span(tagList("Post on ",
-                                          a("December 16th, 2019",
-                                            href = url_helper("10106785080975249")),
-                                          "is a memory of post on",
-                                          a("December 16th, 2008",
-                                            href = url_helper("40080784899")),
-                                          ".  As far as the ancient texts tell us, this is the original DENSE FOG."),
-                                  style = "font-size: 16px"),
+                             heading("When?"),
                              br(),
-                             span(tagList("Post on ",
-                                          a("January 21st, 2020",
-                                            href = url_helper("10106883961477929")),
-                                          "is a memory of post on",
-                                          a("January 21st, 2017",
-                                            href = url_helper("10103980129400689")),
-                                          "."),
-                                  style = "font-size: 16px"),
+                             span_style("Over 70% of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day."),
+                             br(),
+                             span_style("Over 80% of the posts were made between October and February.  Our autumns & winters would be colder. Much colder."),
+                             br(),
+                             span_style("Over 60% of the posts were made in the past four years.  A safety beacon in these dark times, if you will."),
                              br(),
                              br(),
-                             source()),
+                             heading("Seriously Foggy Days"),
+                             br(),
+                             double_helper("November 5, 2015"),
+                             br(),
+                             double_helper("January 21, 2017"),
+                             br(),
+                             br(),
+                             heading("Memories"),
+                             br(),
+                             memory_helper("December 16, 2019"),
+                             br(),
+                             span_style("As far as the ancient texts tell us, this is the original 'Dense Fog'."),
+                             br(),
+                             memory_helper("January 21, 2020"),
+                             br(),
+                             memory_helper("November 5, 2020"),
+                             br(),
+                             br(),
+                             br(),
+                             br(),
+                             source_code()),
             
             #Raw Data.
             conditionalPanel(condition = "input.display == 5",
@@ -317,10 +367,11 @@ ui <- fluidPage(
                              br(),
                              DTOutput("rd_table"),
                              br(),
-                             source()),
+                             source_code()),
         )
     )
 )
+source
 
 
 
