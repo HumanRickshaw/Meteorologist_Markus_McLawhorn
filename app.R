@@ -73,7 +73,7 @@ gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool) {
         #Modify labels and text.
         gg_object <- gg_object + theme(plot.title = element_text(hjust = 0.5, size = 22, face = "bold"),
                                        plot.caption = element_text(size = 12),
-                                       axis.text.x = element_text(hjust = 1, size = 12, angle = 45),
+                                       axis.text.x = element_text(hjust = 1, size = 8, angle = 45),
                                        axis.title.x = element_text(size = 18, face = "bold"),
                                        axis.text.y = element_text(size = 14),
                                        axis.title.y = element_text(hjust = 0.5, size = 18, face = "bold"),
@@ -117,7 +117,7 @@ helper_df <- function(post_filter, boolean) {
             filter(Post == post_filter)
     }
     temp %>%
-        select(Date, oTime, URL, Reactions, Comments, Reference, Post)
+        select(Date, oTime, URL, Reactions, Comments, Reference, Post, Secretary)
 }
 
 
@@ -182,16 +182,44 @@ memory_helper <- function(post_date) {
     temp <- helper_df(post_date, T)
     temp2 <- helper_df(temp[[6]], F)
 
+    if (post_date == "November 6, 2020"){
+        temp_url = paul_url
+    } else {
+        temp_url = temp2[1,3]
+    }
+    
     span_style(tagList("Post on ",
                        a(post_date,
                          href = temp[1,3]),
                        " is a memory of post on ",
                        a(format(temp2[[1]], "%B %d, %Y"),
-                         href = temp2[1,3]),
+                         href = temp_url),
                        "."))
 }
 
 
+
+#Create a memory statement given a date that secretary assisted.
+secretary_helper <- function(post_date) {
+    
+    temp <- helper_df(post_date, T)
+    
+    if (post_date == "November 6, 2017"){
+        temp_url = paul_url
+    } else {
+        temp_url = temp[[3]]
+    }
+
+    general_text(paste(temp[[8]], "handled business on"),
+                 post_date,
+                 temp_url)
+}
+
+
+
+#Paul McCauley posted on his wall and tagged Mark, instead of posting on Mark's wall.
+#The URL format is thus inconsistent.
+paul_url <- "https://www.facebook.com/paul.mccauley.56/posts/10104874956579849"
 
 #Github URL.
 source_code <- function() {
@@ -251,7 +279,7 @@ ui <- fluidPage(
                                                                           "Year" = 16)),
                                       selectInput("y_axis", "Y-axis :", c("Hour" = 19,
                                                                           "Privacy" = 3,
-                                                                          "Text" = 4,
+                                                                          "Reactions" = 20,
                                                                           "Time" = 2)),
                                       selectInput("size", "Size :", c("Comments" = 13,
                                                                       "Hour" = 19,
@@ -307,7 +335,7 @@ ui <- fluidPage(
                              br(),
                              heading("Privacy"),
                              br(),
-                             span_style("Over 60% of the posts are public.  He don't care about your political affiliation."),
+                             span_style("About 60% of the posts are public.  He don't care about your political affiliation."),
                              br(),
                              br(),
                              heading("Social Engagement"),
@@ -316,7 +344,7 @@ ui <- fluidPage(
                                           "February 24, 2016",
                                           "https://www.theverge.com/2016/2/24/11094374/facebook-reactions-like-button"),
                              br(),
-                             social_helper("October 19, 2020"),
+                             social_helper("March 31, 2020"),
                              br(),
                              social_helper("February 20, 2018"),
                              br(),
@@ -327,11 +355,11 @@ ui <- fluidPage(
                              br(),
                              heading("When?"),
                              br(),
-                             span_style("Over 70% of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day."),
+                             span_style("About 64% of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day."),
                              br(),
-                             span_style("Over 80% of the posts were made between October and February.  Our autumns & winters would be colder. Much colder."),
+                             span_style("About 69% of the posts were made between October and February.  Our autumns & winters would be colder. Much colder."),
                              br(),
-                             span_style("Over 60% of the posts were made in the past four years.  A safety beacon in these dark times, if you will."),
+                             span_style("About 66% of the posts were made in the past four years.  A safety beacon in these dark times, if you will."),
                              br(),
                              br(),
                              heading("Seriously Foggy Days"),
@@ -350,6 +378,19 @@ ui <- fluidPage(
                              memory_helper("January 21, 2020"),
                              br(),
                              memory_helper("November 5, 2020"),
+                             br(),
+                             memory_helper("November 6, 2020"),
+                             br(),
+                             br(),
+                             heading("Secretaries"),
+                             br(),
+                             secretary_helper("October 1, 2016"),
+                             br(),
+                             secretary_helper("November 6, 2017"),
+                             br(),
+                             secretary_helper("March 18, 2020"),
+                             br(),
+                             secretary_helper("October 21, 2020"),
                              br(),
                              br(),
                              br(),
@@ -427,7 +468,7 @@ server <- function(input, output) {
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
                 scale_x_continuous("What Hour?", expand = c(0,0), breaks = c(6, 9, 12, 15, 18, 21), labels = c("6:00", "9:00", "12:00", "15:00", "18:00", "21:00")) +
-                scale_y_continuous("How Many Posts?", breaks = c(0, 2, 4, 6, 8, 10), expand = c(0,0))
+                scale_y_continuous("How Many Posts?", breaks = c(0, 3, 6, 9, 12, 15), expand = c(0,0))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
         }
@@ -491,7 +532,7 @@ server <- function(input, output) {
             g1 <- g1 + theme(plot.title = element_text(hjust = 0.5, size = 22, face = "bold"),
                              axis.text.x = element_text(size = 14),
                              axis.title.x = element_text(size = 18, face = "bold"),
-                             axis.text.y = element_text(hjust = 1, size = 9, angle = 20),
+                             axis.text.y = element_text(hjust = 1, size = 7, angle = 20),
                              axis.title.y = element_text(hjust = 0.5, size = 18, face = "bold"),
                              legend.text = element_text(size = 14),
                              legend.title = element_text(hjust = 0.5, size = 18, face = "bold"),
