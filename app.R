@@ -14,6 +14,7 @@ library(viridis)
 
 
 #Read xlsx.
+#setwd("C:/Users/Rohan/Documents/Data Science/Completed/DENSE FOG")
 dfdf <- read_excel("./DENSE FOG.xlsx")
 
 
@@ -144,6 +145,32 @@ general_text <- function(string, anchor, hyperlink) {
                        a(anchor,
                          href = hyperlink),
                        "."))
+}
+
+
+
+#Maff Helper for stats
+maff_helper <- function(df){
+    
+    df_posts <- dim(df)[1]
+    privacy <- percent_conv(dim(df[df$Privacy == "Public",])[1] / df_posts)
+    
+    hour <- percent_conv(dim(df[df$Hour < 10,])[1] / df_posts)
+    
+    month <- percent_conv(dim(df[df$Month %in% c("January", "February", "October", "November", "December"),])[1] / df_posts)
+    
+    year <- percent_conv(dim(df[df$Year > 2016,])[1] / df_posts)
+    
+    output <- list(privacy, hour, month, year)
+    
+    return(output)
+    
+}
+
+
+#Converts decimal to string percent.
+percent_conv <- function(number){
+    return(paste(round(100*number), "%", sep = ""))
 }
 
 
@@ -335,7 +362,9 @@ ui <- fluidPage(
                              br(),
                              heading("Privacy"),
                              br(),
-                             span_style("About 60% of the posts are public.  He don't care about your political affiliation."),
+                             span_style(paste("About",
+                                              maff_helper(dfdf)[1],
+                                              "of the posts are public.  He don't care about your political affiliation.")),
                              br(),
                              br(),
                              heading("Social Engagement"),
@@ -355,11 +384,17 @@ ui <- fluidPage(
                              br(),
                              heading("When?"),
                              br(),
-                             span_style("About 64% of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day."),
+                             span_style(paste("About",
+                                              maff_helper(dfdf)[2],
+                                              "of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.")),
                              br(),
-                             span_style("About 69% of the posts were made between October and February.  Our autumns & winters would be colder. Much colder."),
+                             span_style(paste("About",
+                                              maff_helper(dfdf)[3],
+                                              "of the posts were made between October and February.  Our autumns & winters would be colder. Much colder.")),
                              br(),
-                             span_style("About 66% of the posts were made in the past four years.  A safety beacon in these dark times, if you will."),
+                             span_style(paste("About",
+                                              maff_helper(dfdf)[4],
+                                              "of the posts were made in the past four years.  A safety beacon in these dark times, if you will.")),
                              br(),
                              br(),
                              heading("Seriously Foggy Days"),
