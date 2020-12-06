@@ -207,20 +207,21 @@ double_helper <- function(post_date) {
 memory_helper <- function(post_date) {
     
     temp <- helper_df(post_date, T)
-    temp2 <- helper_df(temp[[6]], F)
+    repost_url <- temp[1, 3]
+    memory <- helper_df(temp[[6]], F)
 
     if (post_date == "November 6, 2020"){
-        temp_url = paul_url
+        memory_url = paul_url
     } else {
-        temp_url = temp2[1,3]
+        memory_url = memory[1, 3]
     }
     
     span_style(tagList("Post on ",
                        a(post_date,
-                         href = temp[1,3]),
+                         href = repost_url),
                        " is a memory of post on ",
-                       a(format(temp2[[1]], "%B %d, %Y"),
-                         href = temp_url),
+                       a(format(memory[[1]], "%B %d, %Y"),
+                         href = memory_url),
                        "."))
 }
 
@@ -417,6 +418,8 @@ ui <- fluidPage(
                              memory_helper("November 6, 2020"),
                              br(),
                              memory_helper("December 5, 2020"),
+                             br(),
+                             memory_helper("December 6, 2020"),
                              br(),
                              br(),
                              heading("Secretaries"),
