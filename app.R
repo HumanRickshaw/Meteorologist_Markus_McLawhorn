@@ -61,25 +61,25 @@ gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool) {
     if (transpose_bool) {
         gg_object <- gg_object + coord_flip()
         #Modify labels and text.
-        gg_object <- gg_object + theme(plot.title = element_text(hjust = 0.5, size = 22, face = "bold"),
-                                       plot.caption = element_text(size = 12),
-                                       axis.text.x = element_text(size = 14),
-                                       axis.title.x = element_text(size = 18, face = "bold"),
+        gg_object <- gg_object + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+                                       plot.caption = element_text(size = 8),
+                                       axis.text.x = element_text(size = 12),
+                                       axis.title.x = element_text(size = 16, face = "bold"),
                                        axis.text.y = element_text(hjust = 1, size = 14, angle = 20),
-                                       axis.title.y = element_text(hjust = 0.5, size = 18, face = "bold"),
-                                       legend.text = element_text(size = 14),
-                                       legend.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+                                       axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
+                                       legend.text = element_text(size = 12),
+                                       legend.title = element_text(hjust = 0.5, size = 16, face = "bold"),
                                        legend.position = ifelse(legend_bool, "right", "none"))
     } else {
         #Modify labels and text.
-        gg_object <- gg_object + theme(plot.title = element_text(hjust = 0.5, size = 22, face = "bold"),
-                                       plot.caption = element_text(size = 12),
-                                       axis.text.x = element_text(hjust = 1, size = 8, angle = 45),
-                                       axis.title.x = element_text(size = 18, face = "bold"),
-                                       axis.text.y = element_text(size = 14),
-                                       axis.title.y = element_text(hjust = 0.5, size = 18, face = "bold"),
-                                       legend.text = element_text(size = 14),
-                                       legend.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+        gg_object <- gg_object + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+                                       plot.caption = element_text(size = 8),
+                                       axis.text.x = element_text(hjust = 1, size = 6, angle = 45),
+                                       axis.title.x = element_text(size = 16, face = "bold"),
+                                       axis.text.y = element_text(size = 12),
+                                       axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
+                                       legend.text = element_text(size = 12),
+                                       legend.title = element_text(hjust = 0.5, size = 16, face = "bold"),
                                        legend.position = ifelse(legend_bool, "bottom", "none"))
     }
     return(gg_object)
@@ -118,7 +118,7 @@ helper_df <- function(post_filter, boolean) {
             filter(Post == post_filter)
     }
     temp %>%
-        select(Date, oTime, URL, Reactions, Comments, Reference, Post, Secretary)
+        select(Date, oTime, URL, Reactions, Comments, Reference, Post, Secretary, Text)
 }
 
 
@@ -178,29 +178,32 @@ percent_conv <- function(number){
 #From Date, grab the URL, Reactions, and Comments.
 #Print a statement.
 social_helper <- function(post_date) {
-    temp <- helper_df(post_date, T)
     
+    temp <- helper_df(post_date, T)
+    url <- temp[1, 3]
+    reactions <- temp[1, 4]
+    comments <- temp[1, 5]
+
     span_style(tagList("Post on ",
-                       a(post_date,
-                         href = temp[3]),
-                       paste("had",
-                             temp[4],
-                             "reactions and",
-                             temp[5],
-                             "comments.")))
+                       a(post_date, href = url),
+                       paste("had", reactions, "reactions and", comments, "comments.")))
 }
 
 #Create double statement given a date that has two DF posts.
 double_helper <- function(post_date) {
-    temp <- helper_df(post_date, T)
     
-    span_style(tagList("There was a post at",
-                      a(substr(temp[1,2], 1, 5),
-                       href = temp[1,3]),
-                    " and ",
-                   a(substr(temp[2,2], 1, 5),
-                    href = temp[2,3]),
-                 paste(" on", post_date, ".")))
+    temp <- helper_df(post_date, T)
+    url1 <- temp[1, 3]
+    text1 <- temp[1, 9]    
+    url2 <- temp[2, 3]
+    text2 <- temp[2, 9] 
+    
+    
+    span_style(tagList(paste("On", post_date, "there was "),
+                       a(text1, href = url1),
+                       " and ",
+                       a(text2, href = url2),
+                       "."))
 }
 
 #Create a memory statement given a date that has a post with memory.
@@ -376,7 +379,7 @@ ui <- fluidPage(
                              br(),
                              social_helper("March 31, 2020"),
                              br(),
-                             social_helper("February 20, 2018"),
+                             social_helper("April 25, 2017"),
                              br(),
                              social_helper("December 27, 2019"),
                              br(),
@@ -398,11 +401,15 @@ ui <- fluidPage(
                                               "of the posts were made in the past four years.  A safety beacon in these dark times, if you will.")),
                              br(),
                              br(),
-                             heading("Seriously Foggy Days"),
+                             heading("Serious Weather Days"),
+                             br(),
+                             double_helper("April 16, 2011"),
                              br(),
                              double_helper("November 5, 2015"),
                              br(),
                              double_helper("January 21, 2017"),
+                             br(),
+                             double_helper("May 31, 2019"),
                              br(),
                              br(),
                              heading("Memories"),
@@ -421,14 +428,22 @@ ui <- fluidPage(
                              br(),
                              memory_helper("December 6, 2020"),
                              br(),
+                             memory_helper("December 14, 2020"),
+                             br(),
                              br(),
                              heading("Secretaries"),
+                             br(),
+                             secretary_helper("March 24, 2011"),
+                             br(),
+                             secretary_helper("October 2, 2012"),
                              br(),
                              secretary_helper("October 1, 2016"),
                              br(),
                              secretary_helper("November 6, 2017"),
                              br(),
                              secretary_helper("March 18, 2020"),
+                             br(),
+                             secretary_helper("June 19, 2020"),
                              br(),
                              secretary_helper("October 21, 2020"),
                              br(),
@@ -521,7 +536,7 @@ server <- function(input, output) {
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
                 scale_x_discrete("What Month?", expand = c(0,0), labels = rev(month.name), drop = FALSE) +
-                scale_y_continuous("How Many Posts?", breaks = c(0, 2, 4, 6, 8, 10), expand = c(0,0))
+                scale_y_continuous("How Many Posts?", breaks = c(0, 3, 6, 9, 12, 15), expand = c(0,0))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
         }
@@ -569,13 +584,13 @@ server <- function(input, output) {
             #Transpose.
             g1 <- g1 + coord_flip()
             #Modify labels and text.
-            g1 <- g1 + theme(plot.title = element_text(hjust = 0.5, size = 22, face = "bold"),
-                             axis.text.x = element_text(size = 14),
-                             axis.title.x = element_text(size = 18, face = "bold"),
-                             axis.text.y = element_text(hjust = 1, size = 7, angle = 20),
-                             axis.title.y = element_text(hjust = 0.5, size = 18, face = "bold"),
-                             legend.text = element_text(size = 14),
-                             legend.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+            g1 <- g1 + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+                             axis.text.x = element_text(size = 12),
+                             axis.title.x = element_text(size = 16, face = "bold"),
+                             axis.text.y = element_text(hjust = 1, size = 5),
+                             axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
+                             legend.text = element_text(size = 12),
+                             legend.title = element_text(hjust = 0.5, size = 16, face = "bold"),
                              legend.position = "none")
             g1
         }
@@ -591,7 +606,7 @@ server <- function(input, output) {
                                  breaks = date_breaks("3 hour"),
                                  labels = date_format("%H:%M")) +
                 scale_y_continuous("How Many Posts?", expand = c(0,0),
-                                   breaks = c(0, 4, 8, 12, 16, 20, 24))
+                                   breaks = c(0, 6, 12, 18, 24, 30))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
         }
@@ -613,9 +628,9 @@ server <- function(input, output) {
         
     },
     #Bar Chart/Histogram size.
-    width = 850,
-    height = 550,
-    res = 100
+    width = 1200,
+    height = 750,
+    res = 150
     )
     
     
