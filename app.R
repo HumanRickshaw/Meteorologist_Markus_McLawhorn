@@ -497,7 +497,7 @@ server <- function(input, output) {
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
                 scale_x_discrete("When He Tell Us?", expand = c(0,0)) +
-                scale_y_continuous("How Many Comments?", expand = c(0,0), breaks = c(0, 3, 6, 9, 12))
+                scale_y_continuous("How Many Comments?", expand = c(0,0))
             gg_helper(g1, FALSE, FALSE, FALSE)
          
         }
@@ -510,7 +510,7 @@ server <- function(input, output) {
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
                 scale_x_date("When He Tell Us?", expand = c(0,0)) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0), breaks = c(0, 3, 6, 9, 12, 15, 18))
+                scale_y_continuous("How Many Posts?", expand = c(0,0))
  
             gg_helper(g1, TRUE, FALSE, TRUE)
         }
@@ -522,8 +522,9 @@ server <- function(input, output) {
             g1 <- g1 + geom_bar()
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_continuous("What Hour?", expand = c(0,0), breaks = c(6, 9, 12, 15, 18, 21), labels = c("6:00", "9:00", "12:00", "15:00", "18:00", "21:00")) +
-                scale_y_continuous("How Many Posts?", breaks = c(0, 3, 6, 9, 12, 15), expand = c(0,0))
+                scale_x_continuous("What Hour?", breaks = c(6, 9, 12, 15, 18, 21),
+                                   labels = c("6:00", "9:00", "12:00", "15:00", "18:00", "21:00"), expand = c(0,0)) +
+                scale_y_continuous("How Many Posts?", expand = c(0,0))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
         }
@@ -536,7 +537,7 @@ server <- function(input, output) {
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
                 scale_x_discrete("What Month?", expand = c(0,0), labels = rev(month.name), drop = FALSE) +
-                scale_y_continuous("How Many Posts?", breaks = c(0, 3, 6, 9, 12, 15), expand = c(0,0))
+                scale_y_continuous("How Many Posts?", expand = c(0,0))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
         }
@@ -578,7 +579,7 @@ server <- function(input, output) {
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
                 scale_x_discrete("What the Forecast???", expand = c(0,0)) +
-                scale_y_continuous("How many times he did it!", breaks = c(0, 3, 6, 9, 12, 15), expand = c(0,0))
+                scale_y_continuous("How many times he did it!", expand = c(0,0))
             #Viridis Color Scale.
             g1 <- g1 + scale_fill_viridis(discrete = TRUE)    
             #Transpose.
@@ -694,7 +695,7 @@ server <- function(input, output) {
                   tickvals = tickvals,
                   ticktext = ticktext,
                   y = 0.25)
-    yaxis <- list(title = "<b>What Year?</b>",
+    yaxis <- list(title = "<b>When?</b>",
                   titlefont = f1,
                   tickfont = f2)
     legend <- list(title = list(text = "<b>Who Can See It?</b>",
