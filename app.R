@@ -123,49 +123,51 @@ helper_df <- function(post_filter, boolean) {
 
 
 
+#Ready title for output.
+title_out <- function(string) {
+    strong(span(textOutput(string), style = "text-align: center; font-size: 36px;"))
+}
+
+
+
 #Ready heading for output.
-heading <- function(string) {
-    strong(string,
-           style = "font-size: 24px")
+heading_out <- function(string) {
+    strong(string, style = "font-size: 24px")
 }
 
 
 
 #Ready text for output.
-span_style <- function(string) {
-    span(string,
-         style = "font-size: 16px")
+text_out <- function(string) {
+    span(string, style = "font-size: 16px")
 }
 
 
 
 #General text with hyperlink.
-general_text <- function(string, anchor, hyperlink) {
-    span_style(tagList(string,
-                       a(anchor,
-                         href = hyperlink),
-                       "."))
+text_link <- function(string, anchor, hyperlink, optional) {
+    if (missing(optional)) {
+        text_out(tagList(string, a(anchor, href = hyperlink)))
+    } else {
+        text_out(tagList(string, a(anchor, href = hyperlink), optional))
+    } 
 }
 
 
 
-#Maff Helper for stats
+#Maff Helper for stats.
 maff_helper <- function(df){
     
     df_posts <- dim(df)[1]
     privacy <- percent_conv(dim(df[df$Privacy == "Public",])[1] / df_posts)
-    
     hour <- percent_conv(dim(df[df$Hour < 10,])[1] / df_posts)
-    
     month <- percent_conv(dim(df[df$Month %in% c("January", "February", "October", "November", "December"),])[1] / df_posts)
-    
     year <- percent_conv(dim(df[df$Year > 2016,])[1] / df_posts)
-    
     output <- list(privacy, hour, month, year)
     
-    return(output)
-    
+    output
 }
+
 
 
 #Converts decimal to string percent.
@@ -184,10 +186,13 @@ social_helper <- function(post_date) {
     reactions <- temp[1, 4]
     comments <- temp[1, 5]
 
-    span_style(tagList("Post on ",
-                       a(post_date, href = url),
-                       paste("had", reactions, "reactions and", comments, "comments.")))
+    text_link("Post on ",
+              post_date,
+              url,
+              paste("had", reactions, "reactions and", comments, "comments."))
 }
+
+
 
 #Create double statement given a date that has two DF posts.
 double_helper <- function(post_date) {
@@ -197,14 +202,16 @@ double_helper <- function(post_date) {
     text1 <- temp[1, 9]    
     url2 <- temp[2, 3]
     text2 <- temp[2, 9] 
-    
-    
-    span_style(tagList(paste("On", post_date, "there was "),
-                       a(text1, href = url1),
-                       " and ",
-                       a(text2, href = url2),
-                       "."))
+  
+    tagList(text_link(paste("On", post_date, "there was "),
+                      text1,
+                      url1),
+            text_link(" and ",
+                      text2,
+                      url2))
 }
+
+
 
 #Create a memory statement given a date that has a post with memory.
 memory_helper <- function(post_date) {
@@ -219,13 +226,12 @@ memory_helper <- function(post_date) {
         memory_url = memory[1, 3]
     }
     
-    span_style(tagList("Post on ",
-                       a(post_date,
-                         href = repost_url),
-                       " is a memory of post on ",
-                       a(format(memory[[1]], "%B %d, %Y"),
-                         href = memory_url),
-                       "."))
+    tagList(text_link("Post on ",
+                      post_date,
+                      repost_url),
+            text_link(" is a memory of post on ",
+                      format(memory[[1]], "%B %d, %Y"),
+                      memory_url))
 }
 
 
@@ -241,9 +247,9 @@ secretary_helper <- function(post_date) {
         temp_url = temp[[3]]
     }
 
-    general_text(paste(temp[[8]], "handled business on"),
-                 post_date,
-                 temp_url)
+    text_link(paste(temp[[8]], "handled business on"),
+              post_date,
+              temp_url)
 }
 
 
@@ -252,11 +258,13 @@ secretary_helper <- function(post_date) {
 #The URL format is thus inconsistent.
 paul_url <- "https://www.facebook.com/paul.mccauley.56/posts/10104874956579849"
 
+
+
 #Github URL.
 source_code <- function() {
-    span_style(general_text("ShinyApp Source Code in R can be found ",
-                            "here",
-                            "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R"))
+    text_link("ShinyApp Source Code in R can be found ",
+              "here",
+              "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R")
 }
     
     
@@ -271,61 +279,64 @@ ui <- fluidPage(
 
     # Sidebar with output options.
     sidebarLayout(
-        sidebarPanel(width = 3,
-                     h5("This is a shoutout to bruh..."),
-                     h5("keeping us apprised of what's really going on."),
-                     h3(strong(span("Choose Main Display"))),
-                     selectInput("display", "", c("Distributions" = 1,
-                                                  "Interactive" = 2,
-                                                  "Links" = 3,
-                                                  "Maff" = 4,
-                                                  "Raw Data" = 5),
-                                 selected = 3),
-                     
-                     #Date is flexible for all choices.
-                     sliderInput("date_in",
-                                 "Date range :",
-                                 as.Date(min(dfdf$Date)),
-                                 as.Date(Sys.Date()),
-                                 value = c(as.Date(min(dfdf$Date)), as.Date(Sys.Date()))),
-                     
-                     #Distributions
-                     conditionalPanel(condition = "input.display == 1",
-                                      selectInput("dist_var", "Variable :", c("Comment", "Date", "Hour", "Month", "Privacy", "Reaction", "Text", "Time", "Year")),
-                                      conditionalPanel(condition = "input.dist_var == 'Comment' || input.dist_var == 'Reaction'",
-                                                       selectInput("dist_x", "Sort By", c("Date of Post", "Time of Day"))),
-                                      conditionalPanel(condition = "input.dist_var == 'Date' || input.dist_var == 'Time'",
-                                                       sliderInput("num_bins",
-                                                                   "Number of Bins",
-                                                                   4, 24, value = 8))
-                     ),
-                     
-                     #Interactive
-                     conditionalPanel(condition = "input.display == 2",
-                                      h5("Create your own Graph!"),
-                                      selectInput("x_axis", "X-axis :", c("Comments" = 13,
-                                                                          "Date" = 1,
-                                                                          "Month" = 17,
-                                                                          "Time" = 2,
-                                                                          "Year" = 16)),
-                                      selectInput("y_axis", "Y-axis :", c("Hour" = 19,
-                                                                          "Privacy" = 3,
-                                                                          "Reactions" = 20,
-                                                                          "Time" = 2)),
-                                      selectInput("size", "Size :", c("Comments" = 13,
-                                                                      "Hour" = 19,
-                                                                      "Reactions" = 20,
-                                                                      "Year" = 16)),
-                                      selectInput("color", "Color :", c("Comments" = 13,
-                                                                        "Hour" = 19,
-                                                                        "Month" = 17,
-                                                                        "Privacy" = 3,
-                                                                        "Reactions" = 20,
-                                                                        "Year" = 16)),
-                     ),
-        ),
-
-        # Show a plots and text based off of user selection.
+        sidebarPanel(
+            width = 3,
+            h5("This is a shoutout to bruh..."),
+            h5("keeping us apprised of what's really going on."),
+            h3(strong(span("Choose Main Display"))),
+            selectInput("display", "", c("Distributions" = 1,
+                                         "Interactive" = 2,
+                                         "Links" = 3,
+                                         "Maff" = 4,
+                                         "Raw Data" = 5),
+                        selected = 3),
+            
+            #Date is flexible for all choices.
+            sliderInput("date_in",
+                        "Date range :",
+                        as.Date(min(dfdf$Date)),
+                        as.Date(Sys.Date()),
+                        value = c(as.Date(min(dfdf$Date)), as.Date(Sys.Date()))),
+            
+            #Distributions
+            conditionalPanel(condition = "input.display == 1",
+                             selectInput("dist_var", "Variable :", c("Comment", "Date", "Hour", "Month", "Privacy", "Reaction", "Text", "Time", "Year")),
+                             conditionalPanel(condition = "input.dist_var == 'Comment' || input.dist_var == 'Reaction'",
+                                              selectInput("dist_x", "Sort By", c("Date of Post", "Time of Day"))),
+                             conditionalPanel(condition = "input.dist_var == 'Date' || input.dist_var == 'Time'",
+                                              sliderInput("num_bins",
+                                                          "Number of Bins",
+                                                          4, 24, value = 8))
+            ),
+            
+            #Interactive
+            conditionalPanel(condition = "input.display == 2",
+                             h5("Create your own Graph!"),
+                             selectInput("x_axis", "X-axis :", c("Comments" = 13,
+                                                                 "Date" = 1,
+                                                                 "Month" = 17,
+                                                                 "Time" = 2,
+                                                                 "Year" = 16)),
+                             selectInput("y_axis", "Y-axis :", c("Hour" = 19,
+                                                                 "Privacy" = 3,
+                                                                 "Reactions" = 20,
+                                                                 "Time" = 2)),
+                             selectInput("size", "Size :", c("Comments" = 13,
+                                                             "Hour" = 19,
+                                                             "Reactions" = 20,
+                                                             "Year" = 16)),
+                             selectInput("color", "Color :", c("Comments" = 13,
+                                                               "Hour" = 19,
+                                                               "Month" = 17,
+                                                               "Privacy" = 3,
+                                                               "Reactions" = 20,
+                                                               "Year" = 16)),
+                             ),
+                    ),
+        
+        
+        
+        #Show a plots and text based off of user selection.
         mainPanel(
             
             #Distributions.
@@ -333,49 +344,49 @@ ui <- fluidPage(
                              plotOutput("dist_plot")),
             #Interactive.
             conditionalPanel(condition = "input.display == 2",
-                             strong(span(textOutput("interactive_title"), align = "center", style = "font-size: 30px")),
+                             title_out("interactive_title"),
                              plotOutput("inter_plot")),
             #Links.
             conditionalPanel(condition = "input.display == 3",
                              br(),
-                             strong(span(textOutput("links_title"), align = "center", style = "font-size: 30px")),
+                             title_out("links_title"),
                              plotlyOutput("links_plot")),
             
             #Maff.
             conditionalPanel(condition = "input.display == 4",
-                             strong(span(textOutput("maff_title"), align = "center", style = "font-size: 30px")),
+                             title_out("maff_title"),
                              br(),
-                             heading("Location"),
+                             heading_out("Location"),
                              br(),
-                             general_text("We assume Raleigh, but he is ",
-                                          "worldwide",
-                                          "https://upload.wikimedia.org/wikipedia/commons/6/6b/Rotating_globe.gif"),
+                             text_link("We assume Raleigh, but he is ",
+                                       "worldwide",
+                                       "https://upload.wikimedia.org/wikipedia/commons/6/6b/Rotating_globe.gif"),
                              br(),
-                             general_text("On May 4th, 2019 he posted from ",
-                                          "Asheville, NC",
-                                          url_helper("10106177579962149")),
+                             text_link("On May 4th, 2019 he posted from ",
+                                       "Asheville, NC",
+                                       url_helper("10106177579962149")),
                              br(),
-                             general_text("On January 21st, 2017 he ventured out to bougie-ass ",
-                                          "Cary, NC",
-                                          url_helper("10103980793270289")),
+                             text_link("On January 21st, 2017 he ventured out to bougie-ass ",
+                                       "Cary, NC",
+                                       url_helper("10103980793270289")),
                              br(),
-                             general_text("On November 29th, 2015, visiting his roots, he informed us from ",
-                                          "Mt. Afton, VA",
-                                          url_helper("10102987182504229")),
-                             br(),
-                             br(),
-                             heading("Privacy"),
-                             br(),
-                             span_style(paste("About",
-                                              maff_helper(dfdf)[1],
-                                              "of the posts are public.  He don't care about your political affiliation.")),
+                             text_link("On November 29th, 2015, visiting his roots, he informed us from ",
+                                       "Mt. Afton, VA",
+                                       url_helper("10102987182504229")),
                              br(),
                              br(),
-                             heading("Social Engagement"),
+                             heading_out("Privacy"),
                              br(),
-                             general_text("FB introduced reactions on ",
-                                          "February 24, 2016",
-                                          "https://www.theverge.com/2016/2/24/11094374/facebook-reactions-like-button"),
+                             text_out(paste("About",
+                                            maff_helper(dfdf)[1],
+                                            "of the posts are public.  He don't care about your political affiliation.")),
+                             br(),
+                             br(),
+                             heading_out("Social Engagement"),
+                             br(),
+                             text_link("FB introduced reactions on ",
+                                       "February 24, 2016",
+                                       "https://www.theverge.com/2016/2/24/11094374/facebook-reactions-like-button"),
                              br(),
                              social_helper("March 31, 2020"),
                              br(),
@@ -386,22 +397,22 @@ ui <- fluidPage(
                              social_helper("November 5, 2020"),
                              br(),
                              br(),
-                             heading("When?"),
+                             heading_out("When?"),
                              br(),
-                             span_style(paste("About",
-                                              maff_helper(dfdf)[2],
-                                              "of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.")),
+                             text_out(paste("About",
+                                            maff_helper(dfdf)[2],
+                                            "of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.")),
                              br(),
-                             span_style(paste("About",
-                                              maff_helper(dfdf)[3],
-                                              "of the posts were made between October and February.  Our autumns & winters would be colder. Much colder.")),
+                             text_out(paste("About",
+                                            maff_helper(dfdf)[3],
+                                            "of the posts were made between October and February.  Our autumns & winters would be colder. Much colder.")),
                              br(),
-                             span_style(paste("About",
-                                              maff_helper(dfdf)[4],
-                                              "of the posts were made in the past four years.  A safety beacon in these dark times, if you will.")),
+                             text_out(paste("About",
+                                            maff_helper(dfdf)[4],
+                                            "of the posts were made in the past four years.  A safety beacon in these dark times, if you will.")),
                              br(),
                              br(),
-                             heading("Serious Weather Days"),
+                             heading_out("Serious Weather Days"),
                              br(),
                              double_helper("April 16, 2011"),
                              br(),
@@ -412,11 +423,11 @@ ui <- fluidPage(
                              double_helper("May 31, 2019"),
                              br(),
                              br(),
-                             heading("Memories"),
+                             heading_out("Memories"),
                              br(),
                              memory_helper("December 16, 2019"),
                              br(),
-                             span_style("As far as the ancient texts tell us, this is the original 'Dense Fog'."),
+                             text_out("As far as the ancient texts tell us, this is the original 'Dense Fog'."),
                              br(),
                              memory_helper("January 21, 2020"),
                              br(),
@@ -431,7 +442,7 @@ ui <- fluidPage(
                              memory_helper("December 14, 2020"),
                              br(),
                              br(),
-                             heading("Secretaries"),
+                             heading_out("Secretaries"),
                              br(),
                              secretary_helper("March 24, 2011"),
                              br(),
@@ -447,6 +458,8 @@ ui <- fluidPage(
                              br(),
                              secretary_helper("October 21, 2020"),
                              br(),
+                             secretary_helper("December 23, 2020"),
+                             br(),
                              br(),
                              br(),
                              br(),
@@ -454,7 +467,7 @@ ui <- fluidPage(
             
             #Raw Data.
             conditionalPanel(condition = "input.display == 5",
-                             strong(span(textOutput("rd_title"), align = "center", style = "font-size: 30px")),
+                             title_out("rd_title"),
                              br(),
                              DTOutput("rd_table"),
                              br(),
