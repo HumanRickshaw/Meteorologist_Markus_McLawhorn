@@ -55,7 +55,7 @@ likes <- dfdf[c(1, 18, 6:12)] %>%
 gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool) {
     
     #Viridis Color Scale.
-    gg_object <- gg_object + scale_fill_viridis(discrete = discrete_bool)    
+    gg_object <- gg_object + scale_fill_viridis(discrete = discrete_bool, direction = -1)    
     
     #Transpose.
     if (transpose_bool) {
@@ -459,6 +459,8 @@ ui <- fluidPage(
                              secretary_helper("October 21, 2020"),
                              br(),
                              secretary_helper("December 23, 2020"),
+                             br(),
+                             secretary_helper("January 2, 2021"),
                              br(),
                              br(),
                              br(),
