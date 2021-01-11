@@ -441,6 +441,8 @@ ui <- fluidPage(
                              br(),
                              memory_helper("December 14, 2020"),
                              br(),
+                             memory_helper("January 3, 2021"),
+                             br(),
                              br(),
                              heading_out("Secretaries"),
                              br(),
