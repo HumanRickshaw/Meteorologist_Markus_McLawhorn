@@ -429,6 +429,8 @@ ui <- fluidPage(
                              br(),
                              text_out("As far as the ancient texts tell us, this is the original 'Dense Fog'."),
                              br(),
+                             memory_helper("January 17, 2020"),
+                             br(),
                              memory_helper("January 21, 2020"),
                              br(),
                              memory_helper("November 5, 2020"),
@@ -442,6 +444,8 @@ ui <- fluidPage(
                              memory_helper("December 14, 2020"),
                              br(),
                              memory_helper("January 3, 2021"),
+                             br(),
+                             memory_helper("January 17, 2021"),
                              br(),
                              br(),
                              heading_out("Secretaries"),
@@ -623,8 +627,7 @@ server <- function(input, output) {
                 scale_x_datetime("What Time of Day?", expand = c(0,0),
                                  breaks = date_breaks("3 hour"),
                                  labels = date_format("%H:%M")) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0),
-                                   breaks = c(0, 6, 12, 18, 24, 30))
+                scale_y_continuous("How Many Posts?", expand = c(0,0))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
         }
@@ -700,11 +703,12 @@ server <- function(input, output) {
     #Label font.
     f2 <- list(size = 18, color = "grey")
     #Times
-    tickvals = c("1899-12-31 06:00:00", "1899-12-31 09:00:00",
+    tickvals = c("1899-12-31 00:00:00", "1899-12-31 03:00:00",
+                 "1899-12-31 06:00:00", "1899-12-31 09:00:00",
                  "1899-12-31 12:00:00", "1899-12-31 15:00:00",
                  "1899-12-31 18:00:00", "1899-12-31 21:00:00")
-    ticktext = c("06:00", "09:00", "12:00",
-                 "15:00", "18:00", "21:00")
+    ticktext = c("00:00", "03:00", "06:00", "09:00",
+                 "12:00", "15:00", "18:00", "21:00")
     #Axes and Legend setup.
     xaxis <- list(title = "<b>What Time of Day?</b>",
                   titlefont = f1,
