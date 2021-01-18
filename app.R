@@ -13,6 +13,11 @@ library(viridis)
 
 
 
+hour_list <- c("00:00", "03:00", "06:00", "09:00",
+               "12:00", "15:00", "18:00", "21:00")
+
+
+
 #Read xlsx.
 #setwd("C:/Users/Rohan/Documents/Data Science/Completed/DENSE FOG")
 dfdf <- read_excel("./DENSE FOG.xlsx")
@@ -399,6 +404,12 @@ ui <- fluidPage(
                              br(),
                              heading_out("When?"),
                              br(),
+                             text_out(paste("Since",
+                                            paste(format(dfdf$Date[1], "%B %d, %Y"), ",", sep = ""),
+                                            "Young Markus has made",
+                                            nrow(dfdf),
+                                            "Facebook Weather Reports.")),
+                             br(),
                              text_out(paste("About",
                                             maff_helper(dfdf)[2],
                                             "of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.")),
@@ -543,8 +554,8 @@ server <- function(input, output) {
             g1 <- g1 + geom_bar()
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_continuous("What Hour?", breaks = c(6, 9, 12, 15, 18, 21),
-                                   labels = c("6:00", "9:00", "12:00", "15:00", "18:00", "21:00"), expand = c(0,0)) +
+                scale_x_continuous("What Hour?", breaks = c(0, 3, 6, 9, 12, 15, 18, 21),
+                                   labels = hour_list, expand = c(0,0)) +
                 scale_y_continuous("How Many Posts?", expand = c(0,0))
             
             gg_helper(g1, TRUE, FALSE, TRUE)
@@ -707,8 +718,7 @@ server <- function(input, output) {
                  "1899-12-31 06:00:00", "1899-12-31 09:00:00",
                  "1899-12-31 12:00:00", "1899-12-31 15:00:00",
                  "1899-12-31 18:00:00", "1899-12-31 21:00:00")
-    ticktext = c("00:00", "03:00", "06:00", "09:00",
-                 "12:00", "15:00", "18:00", "21:00")
+    ticktext = hour_list
     #Axes and Legend setup.
     xaxis <- list(title = "<b>What Time of Day?</b>",
                   titlefont = f1,
