@@ -45,7 +45,10 @@ dfdf <- dfdf %>%
                              format(Date, "%A %B %d, %Y"),
                              format(Time, "%H:%M"),
                              sep = "<br>"),
-           URL = url_helper(Post))
+           URL = url_helper(Post),
+           Text2 = ifelse(nchar(Text) > 50,
+                          paste(substring(Text, 1, 50), "...", sep = ""),
+                          Text))
 
 
 
@@ -606,7 +609,7 @@ server <- function(input, output) {
         #Text.
         else if (input$dist_var == "Text") {
             #Histogram
-            g1 <- ggplot(data = df_update(), aes(x = fct_rev(Text), fill = Text))
+            g1 <- ggplot(data = df_update(), aes(x = Text2, fill = Text2))
             g1 <- g1 + geom_bar()
             #Axis Labels.
             g1 <- g1 + ggtitle("Distribution of Updates") +
@@ -614,16 +617,12 @@ server <- function(input, output) {
                 scale_y_continuous("How many times he did it!", expand = c(0,0))
             #Viridis Color Scale.
             g1 <- g1 + scale_fill_viridis(discrete = TRUE)    
-            #Transpose.
-            g1 <- g1 + coord_flip()
             #Modify labels and text.
             g1 <- g1 + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
-                             axis.text.x = element_text(size = 12),
+                             axis.text.x = element_text(hjust = 1, size = 5, angle = 60),
                              axis.title.x = element_text(size = 16, face = "bold"),
-                             axis.text.y = element_text(hjust = 1, size = 5),
+                             axis.text.y = element_text(hjust = 1, size = 12),
                              axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
-                             legend.text = element_text(size = 12),
-                             legend.title = element_text(hjust = 0.5, size = 16, face = "bold"),
                              legend.position = "none")
             g1
         }
