@@ -504,202 +504,194 @@ source
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     
-    #Filter Date.
-    df_update <- reactive({
-        dfdf %>%
-            filter(Date >= input$date_in[1],
-                   Date <= input$date_in[2])
-    })
-    like <- reactive({
-        likes %>%
-            filter(Date >= input$date_in[1],
-                   Date <= input$date_in[2])
-    })
+  #Filter Date.
+  df_update <- reactive({
+    dfdf %>%
+      filter(Date >= input$date_in[1],
+             Date <= input$date_in[2])
+  })
+  like <- reactive({
+    likes %>%
+      filter(Date >= input$date_in[1],
+             Date <= input$date_in[2])
+  })
 
-    #Distributions.
-    output$dist_plot <- renderPlot({
-        
-        #Comments.
-        if (input$dist_var == "Comment") {
-            #Stacked Bar Chart.
-            if (input$dist_x == "Date of Post") {
-                g1 <- ggplot(data = df_update(), aes(x = as.character(Date), y = Comments, fill = Comments))
-            } else {
-                g1 <- ggplot(data = df_update(), aes(x = as.character(oTime), y = Comments, fill = Comments))
-            }
-            g1 <- g1 + labs(caption = "Comments are numbers from original posts.")
-            g1 <- g1 + geom_bar(stat = "identity")
-            #Axis Labels.
-            g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_discrete("When He Tell Us?", expand = c(0,0)) +
-                scale_y_continuous("How Many Comments?", expand = c(0,0))
-            gg_helper(g1, FALSE, FALSE, FALSE)
-         
-        }
-        
-        #Date.
-        else if (input$dist_var == "Date") {
-            #Histogram
-            g1 <- ggplot(data = df_update(), aes(x = Date, fill = factor(Date)))
-            g1 <- g1 + geom_histogram(bins = input$num_bins)
-            #Axis Labels.
-            g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_date("When He Tell Us?", expand = c(0,0)) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0))
- 
-            gg_helper(g1, TRUE, FALSE, TRUE)
-        }
-        
-        #Hour.
-        else if (input$dist_var == "Hour") {
-            #Histogram
-            g1 <- ggplot(data = df_update(), aes(x = Hour, fill = factor(Hour)))
-            g1 <- g1 + geom_bar()
-            #Axis Labels.
-            g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_continuous("What Hour?", breaks = c(0, 3, 6, 9, 12, 15, 18, 21),
-                                   labels = hour_list, expand = c(0,0)) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0))
-            
-            gg_helper(g1, TRUE, FALSE, TRUE)
-        }
-        
-        #Month.
-        else if (input$dist_var == "Month") {
-            #Histogram
-            g1 <- ggplot(data = df_update(), aes(x = Month, fill = Month))
-            g1 <- g1 + geom_bar()
-            #Axis Labels.
-            g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_discrete("What Month?", expand = c(0,0), labels = rev(month.name), drop = FALSE) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0))
-            
-            gg_helper(g1, TRUE, FALSE, TRUE)
-        }
-        
-        #Privacy.
-        else if (input$dist_var == "Privacy") {
-            #Histogram
-            g1 <- ggplot(data = df_update(), aes(x = reorder(Privacy, desc(Privacy)), fill = reorder(Privacy, desc(Privacy))))
-            g1 <- g1 + geom_bar()
-            #Axis Labels.
-            g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_discrete("Who Can See Dat?", expand = c(0,0)) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0))
-
-            gg_helper(g1, TRUE, FALSE, TRUE)
-        }
-        
-        #Reactions.
-        else if (input$dist_var == "Reaction") {
-            #Stacked Bar Chart.
-            if (input$dist_x == "Date of Post") {
-                g1 <- ggplot(data = like(), aes(x = as.character(Date), y = Count, fill = Reaction))
-            } else {
-                g1 <- ggplot(data = like(), aes(x = as.character(oTime), y = Count, fill = Reaction))
-            }
-            g1 <- g1 + labs(caption = "Likes and reactions are numbers from original posts.")            
-            g1 <- g1 + geom_bar(position = "stack", stat = "identity")
-            #Axis Labels.
-            g1 <- g1 + scale_x_discrete("When He Tell Us???", expand = c(0,0)) +
-                scale_y_continuous("Count of Reactions", expand = c(0,0))
-            gg_helper(g1, TRUE, TRUE, FALSE)
-
-        }
-        #Text.
-        else if (input$dist_var == "Text") {
-            #Histogram
-            g1 <- ggplot(data = df_update(), aes(x = Text2, fill = Text2))
-            g1 <- g1 + geom_bar()
-            #Axis Labels.
-            g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_discrete("What the Forecast???", expand = c(0,0)) +
-                scale_y_continuous("How many times he did it!", expand = c(0,0))
-            #Viridis Color Scale.
-            g1 <- g1 + scale_fill_viridis(discrete = TRUE)    
-            #Modify labels and text.
-            g1 <- g1 + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
-                             axis.text.x = element_text(hjust = 1, size = 5, angle = 60),
-                             axis.title.x = element_text(size = 16, face = "bold"),
-                             axis.text.y = element_text(hjust = 1, size = 12),
-                             axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
-                             legend.position = "none")
-            g1
-        }
-        
-        #Time.
-        else if (input$dist_var == "Time") {
-            #Histogram
-            g1 <- ggplot(data = df_update(), aes(x = Time, fill = factor(Time)))
-            g1 <- g1 + geom_histogram(bins = input$num_bins)
-            #Axis Labels.
-            g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_datetime("What Time of Day?", expand = c(0,0),
-                                 breaks = date_breaks("3 hour"),
-                                 labels = date_format("%H:%M")) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0))
-            
-            gg_helper(g1, TRUE, FALSE, TRUE)
-        }
-
-        #Year.
-        else if (input$dist_var == "Year") {
-            #Histogram
-            g1 <- ggplot(data = df_update(), aes(x = Year, fill = factor(Year)))
-            g1 <- g1 + geom_histogram(binwidth = 1)
-            #Axis Labels.
-            g1 <- g1 + ggtitle("Distribution of Updates") +
-                scale_x_continuous("What Year?", expand = c(0,0),
-                                   breaks = c(2008, 2011, 2014, 2017, 2020),
-                                   labels = c(2008, 2011, 2014, 2017, 2020)) +
-                scale_y_continuous("How Many Posts?", expand = c(0,0))
-            
-            gg_helper(g1, TRUE, FALSE, TRUE)
-        }
-        
-    },
-    #Bar Chart/Histogram size.
-    width = 1200,
-    height = 750,
-    res = 150
-    )
+  #Distributions.
+  output$dist_plot <- renderPlot({
+    print("DID I GET HERE")
+    #Comments.
+    if (input$dist_var == "Comment") {
+      #Stacked Bar Chart.
+      if (input$dist_x == "Date of Post") {
+        g1 <- ggplot(data = df_update(), aes(x = as.character(Date), y = Comments, fill = Comments))
+      } else {
+        g1 <- ggplot(data = df_update(), aes(x = as.character(oTime), y = Comments, fill = Comments))
+      }
+      g1 <- g1 + labs(caption = "Comments are numbers from original posts.")
+      g1 <- g1 + geom_bar(stat = "identity")
+      #Axis Labels.
+      g1 <- g1 + ggtitle("Distribution of Updates") +
+        scale_x_discrete("When He Tell Us?", expand = c(0,0)) +
+        scale_y_continuous("How Many Comments?", expand = c(0,0))
+      gg_helper(g1, FALSE, FALSE, FALSE)
+    }
     
+    #Date.
+    else if (input$dist_var == "Date") {
+      #Histogram
+      g1 <- ggplot(data = df_update(), aes(x = Date, fill = factor(Date)))
+      g1 <- g1 + geom_histogram(bins = input$num_bins)
+      #Axis Labels.
+      g1 <- g1 + ggtitle("Distribution of Updates") +
+        scale_x_date("When He Tell Us?", expand = c(0,0)) +
+        scale_y_continuous("How Many Posts?", expand = c(0,0))
+      
+      gg_helper(g1, TRUE, FALSE, TRUE)
+    }
     
+    #Hour.
+    else if (input$dist_var == "Hour") {
+      #Histogram
+      g1 <- ggplot(data = df_update(), aes(x = Hour, fill = factor(Hour)))
+      g1 <- g1 + geom_bar()
+      #Axis Labels.
+      g1 <- g1 + ggtitle("Distribution of Updates") +
+        scale_x_continuous("What Hour?", breaks = c(0, 3, 6, 9, 12, 15, 18, 21),
+                           labels = hour_list, expand = c(0,0)) +
+        scale_y_continuous("How Many Posts?", expand = c(0,0))
+      
+      gg_helper(g1, TRUE, FALSE, TRUE)
+    }
     
-    #Interactive.
-    output$interactive_title <- renderText("Page Under Construction...")
+    #Month.
+    else if (input$dist_var == "Month") {
+      #Histogram
+      g1 <- ggplot(data = df_update(), aes(x = Month, fill = Month))
+      g1 <- g1 + geom_bar()
+      #Axis Labels.
+      g1 <- g1 + ggtitle("Distribution of Updates") +
+        scale_x_discrete("What Month?", expand = c(0,0), labels = rev(month.name), drop = FALSE) +
+        scale_y_continuous("How Many Posts?", expand = c(0,0))
+      
+      gg_helper(g1, TRUE, FALSE, TRUE)
+    }
     
-    output$inter_plot <- renderPlot({
-
-        g2 <- interactive(df_update(), input$x_axis, input$y_axis, input$size, input$color)
-        g2 <- g2 + geom_point()
-        
-        #Viridis Color Scale.
-        g2 <- g2 + scale_color_viridis()  
-        
-        
-        #Modify labels and text.
-        #g2 <- g2 + theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-        #                 axis.text.x = element_text(hjust = 1, size = 12, angle = 55),
-        #                 axis.title.x = element_text(size = 14, face = "bold"),
-        #                 axis.text.y = element_text(size = 12),
-        #                 axis.title.y = element_text(hjust = 0.5, size = 14, face = "bold"))
-        
-        g2
-    },
-    #Bar Chart/Histogram size.
-    width = 850,
-    height = 550,
-    res = 100
-    )
+    #Privacy.
+    else if (input$dist_var == "Privacy") {
+      #Histogram
+      g1 <- ggplot(data = df_update(), aes(x = reorder(Privacy, desc(Privacy)), fill = reorder(Privacy, desc(Privacy))))
+      g1 <- g1 + geom_bar()
+      #Axis Labels.
+      g1 <- g1 + ggtitle("Distribution of Updates") +
+        scale_x_discrete("Who Can See Dat?", expand = c(0,0)) +
+        scale_y_continuous("How Many Posts?", expand = c(0,0))
+      
+      gg_helper(g1, TRUE, FALSE, TRUE)
+    }
     
+    #Reactions.
+    else if (input$dist_var == "Reaction") {
+      #Stacked Bar Chart.
+      if (input$dist_x == "Date of Post") {
+        g1 <- ggplot(data = like(), aes(x = as.character(Date), y = Count, fill = Reaction))
+      } else {
+        g1 <- ggplot(data = like(), aes(x = as.character(oTime), y = Count, fill = Reaction))
+      }
+      g1 <- g1 + labs(caption = "Likes and reactions are numbers from original posts.")            
+      g1 <- g1 + geom_bar(position = "stack", stat = "identity")
+      #Axis Labels.
+      g1 <- g1 + scale_x_discrete("When He Tell Us???", expand = c(0,0)) +
+        scale_y_continuous("Count of Reactions", expand = c(0,0))
+      gg_helper(g1, TRUE, TRUE, FALSE)
+      
+    }
+    #Text.
+    else if (input$dist_var == "Text") {
+      #Histogram
+      g1 <- ggplot(data = df_update(), aes(x = Text2, fill = Text2))
+      g1 <- g1 + geom_bar()
+      #Axis Labels.
+      g1 <- g1 + ggtitle("Distribution of Updates") +
+        scale_x_discrete("What the Forecast???", expand = c(0,0)) +
+        scale_y_continuous("How many times he did it!", expand = c(0,0))
+      #Viridis Color Scale.
+      g1 <- g1 + scale_fill_viridis(discrete = TRUE)    
+      #Modify labels and text.
+      g1 <- g1 + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+                       axis.text.x = element_text(hjust = 1, size = 5, angle = 60),
+                       axis.title.x = element_text(size = 16, face = "bold"),
+                       axis.text.y = element_text(hjust = 1, size = 12),
+                       axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
+                       legend.position = "none")
+      g1
+    }
     
+    #Time.
+    else if (input$dist_var == "Time") {
+      #Histogram
+      g1 <- ggplot(data = df_update(), aes(x = Time, fill = factor(Time)))
+      g1 <- g1 + geom_histogram(bins = input$num_bins)
+      #Axis Labels.
+      g1 <- g1 + ggtitle("Distribution of Updates") +
+        scale_x_datetime("What Time of Day?", expand = c(0,0),
+                         breaks = date_breaks("3 hour"),
+                         labels = date_format("%H:%M")) +
+        scale_y_continuous("How Many Posts?", expand = c(0,0))
+      
+      gg_helper(g1, TRUE, FALSE, TRUE)
+    }
     
-    #Links.
-    output$links_title <- renderText("Click Point for Archived Report")
+    #Year.
+    else if (input$dist_var == "Year") {
+      #Histogram
+      g1 <- ggplot(data = df_update(), aes(x = Year, fill = factor(Year)))
+      g1 <- g1 + geom_histogram(binwidth = 1)
+      #Axis Labels.
+      g1 <- g1 + ggtitle("Distribution of Updates") +
+        scale_x_continuous("What Year?", expand = c(0,0),
+                           breaks = c(2008, 2011, 2014, 2017, 2020),
+                           labels = c(2008, 2011, 2014, 2017, 2020)) +
+        scale_y_continuous("How Many Posts?", expand = c(0,0))
+      
+      gg_helper(g1, TRUE, FALSE, TRUE)
+    }
+  },
+  
+  #Bar Chart/Histogram size.
+  width = 1200,
+  height = 750,
+  res = 150
+  )
+  
+  
+  
+  #Interactive.
+  output$interactive_title <- renderText("Page Under Construction...")
+  
+  output$inter_plot <- renderPlot({
     
-    #JavaScript to allow points to open URLs.
-    js <- "
+    g2 <- interactive(df_update(), input$x_axis, input$y_axis, input$size, input$color)
+    g2 <- g2 + geom_point()
+    
+    #Viridis Color Scale.
+    g2 <- g2 + scale_color_viridis()  
+    
+    g2
+  },
+  
+  #Bar Chart/Histogram size.
+  width = 850,
+  height = 550,
+  res = 100
+  )
+  
+  
+  
+  #Links.
+  output$links_title <- renderText("Click Point for Archived Report")
+  
+  #JavaScript to allow points to open URLs.
+  js <- "
         function(el, x) {
             el.on('plotly_click', function(d) {
                 var point = d.points[0];
@@ -707,70 +699,70 @@ server <- function(input, output) {
                 window.open(url);
                 });
                 }"
-    
-    #Title fonts.
-    f1 <- list(size = 24, color = "black")
-    #Label font.
-    f2 <- list(size = 18, color = "grey")
-    #Times
-    tickvals = c("1899-12-31 00:00:00", "1899-12-31 03:00:00",
-                 "1899-12-31 06:00:00", "1899-12-31 09:00:00",
-                 "1899-12-31 12:00:00", "1899-12-31 15:00:00",
-                 "1899-12-31 18:00:00", "1899-12-31 21:00:00")
-    ticktext = hour_list
-    #Axes and Legend setup.
-    xaxis <- list(title = "<b>What Time of Day?</b>",
-                  titlefont = f1,
-                  tickfont = f2,
-                  tickvals = tickvals,
-                  ticktext = ticktext,
-                  y = 0.25)
-    yaxis <- list(title = "<b>When?</b>",
-                  titlefont = f1,
-                  tickfont = f2)
-    legend <- list(title = list(text = "<b>Who Can See It?</b>",
-                                font = f1),
-                   font = f2,
-                   orientation = 'h',
-                   xanchor = 'center',
-                   x = 0.45,
-                   y = -0.3)
-    
-    output$links_plot <- renderPlotly({
-        p <- plot_ly(data = df_update(),
-                     x = ~Time,
-                     y = ~Date,
-                     color = ~Privacy,
-                     colors = viridis_pal(direction = -1, option = "D")(3),
-                     alpha = 0.75,
-                     marker = list(size = 20),
-                     text = ~Hovertext,
-                     hoverinfo = 'text',
-                     customdata = ~URL,
-                     type = "scatter",
-                     mode = "markers",
-                     width = 850,
-                     height = 550) %>%
-            layout(xaxis = xaxis,
-                   yaxis = yaxis,
-                   legend = legend) %>%
-            onRender(js)
-    })
-
-    
-    
-    #Maff.
-    output$maff_title <- renderText("Some numbers...")
-        
-    
-        
-    #Raw Data.
-    output$rd_title <- renderText("Complete Data")
-    output$rd_table <- renderDT(datatable(df_update()[c(1:13)] %>%
-                                              mutate(Date = as.character(Date),
-                                                     Time = substr(as.character(Time), 12, 19)),
-                                          rownames = FALSE,
-                                          options = list(autoWidth = TRUE)))
+  
+  #Title fonts.
+  f1 <- list(size = 24, color = "black")
+  #Label font.
+  f2 <- list(size = 18, color = "grey")
+  #Times
+  tickvals = c("1899-12-31 00:00:00", "1899-12-31 03:00:00",
+               "1899-12-31 06:00:00", "1899-12-31 09:00:00",
+               "1899-12-31 12:00:00", "1899-12-31 15:00:00",
+               "1899-12-31 18:00:00", "1899-12-31 21:00:00")
+  ticktext = hour_list
+  #Axes and Legend setup.
+  xaxis <- list(title = "<b>What Time of Day?</b>",
+                titlefont = f1,
+                tickfont = f2,
+                tickvals = tickvals,
+                ticktext = ticktext,
+                y = 0.25)
+  yaxis <- list(title = "<b>When?</b>",
+                titlefont = f1,
+                tickfont = f2)
+  legend <- list(title = list(text = "<b>Who Can See It?</b>",
+                              font = f1),
+                 font = f2,
+                 orientation = 'h',
+                 xanchor = 'center',
+                 x = 0.45,
+                 y = -0.3)
+  
+  output$links_plot <- renderPlotly({
+    p <- plot_ly(data = df_update(),
+                 x = ~Time,
+                 y = ~Date,
+                 color = ~Privacy,
+                 colors = viridis_pal(direction = -1, option = "D")(3),
+                 alpha = 0.75,
+                 marker = list(size = 20),
+                 text = ~Hovertext,
+                 hoverinfo = 'text',
+                 customdata = ~URL,
+                 type = "scatter",
+                 mode = "markers",
+                 width = 850,
+                 height = 550) %>%
+      layout(xaxis = xaxis,
+             yaxis = yaxis,
+             legend = legend) %>%
+      onRender(js)
+  })
+  
+  
+  
+  #Maff.
+  output$maff_title <- renderText("Some numbers...")
+  
+  
+  
+  #Raw Data.
+  output$rd_title <- renderText("Complete Data")
+  output$rd_table <- renderDT(datatable(df_update()[c(1:13)] %>%
+                                          mutate(Date = as.character(Date),
+                                                 Time = substr(as.character(Time), 12, 19)),
+                                        rownames = FALSE,
+                                        options = list(autoWidth = TRUE)))
 }
 
 
