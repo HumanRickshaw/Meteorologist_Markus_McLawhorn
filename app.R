@@ -436,6 +436,8 @@ ui <- fluidPage(
                              br(),
                              double_helper("May 31, 2019"),
                              br(),
+                             double_helper("February 15, 2021"),
+                             br(),
                              br(),
                              heading_out("Memories"),
                              br(),
@@ -518,7 +520,6 @@ server <- function(input, output) {
 
   #Distributions.
   output$dist_plot <- renderPlot({
-    print("DID I GET HERE")
     #Comments.
     if (input$dist_var == "Comment") {
       #Stacked Bar Chart.
