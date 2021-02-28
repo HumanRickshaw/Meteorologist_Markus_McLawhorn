@@ -486,6 +486,7 @@ ui <- fluidPage(
                              br(),
                              secretary_helper("January 2, 2021"),
                              br(),
+                             secretary_helper("February 28, 2021"),
                              br(),
                              br(),
                              br(),
