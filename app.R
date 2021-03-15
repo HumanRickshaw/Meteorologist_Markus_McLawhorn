@@ -507,9 +507,13 @@ server <- function(input, output) {
   })
   
   df_sec <- reactive({
-    dfdf %>%
+    dfdf <- dfdf %>%
       filter(!is.na(Secretary)) %>%
       select(Date, Text, URL, Hovertext, Secretary)
+    
+    dfdf[dfdf$Secretary == 'Paul McCauley', 'URL'] <- paul_url
+    
+    dfdf
   })
 
   #Distributions.
