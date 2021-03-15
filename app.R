@@ -245,20 +245,21 @@ memory_helper <- function(post_date) {
 
 
 #Create a memory statement given a date that secretary assisted.
-secretary_helper <- function(post_date) {
-    
-    temp <- helper_df(post_date, T)
-    
-    if (post_date == "November 6, 2017"){
-        temp_url = paul_url
-    } else {
-        temp_url = temp[[3]]
-    }
-
-    text_link(paste(temp[[8]], "handled business on"),
-              post_date,
-              temp_url)
-}
+#Deprecated.  See Links, Secretaries.
+#secretary_helper <- function(post_date) {
+#    
+#    temp <- helper_df(post_date, T)
+#    
+#    if (post_date == "November 6, 2017"){
+#        temp_url = paul_url
+#    } else {
+#        temp_url = temp[[3]]
+#    }
+#
+#    text_link(paste(temp[[8]], "handled business on"),
+#              post_date,
+#              temp_url)
+#}
 
 
 
@@ -294,10 +295,11 @@ ui <- fluidPage(
             h3(strong(span("Choose Main Display"))),
             selectInput("display", "", c("Distributions" = 1,
                                          "Interactive" = 2,
-                                         "Links" = 3,
-                                         "Maff" = 4,
-                                         "Raw Data" = 5),
-                        selected = 3),
+                                         "Links, All" = 3,
+                                         "Links, Secretaries" = 4,
+                                         "Maff" = 5,
+                                         "Raw Data" = 6),
+                        selected = 4),
             
             #Date is flexible for all choices.
             sliderInput("date_in",
@@ -354,14 +356,20 @@ ui <- fluidPage(
             conditionalPanel(condition = "input.display == 2",
                              title_out("interactive_title"),
                              plotOutput("inter_plot")),
-            #Links.
+            
+            #Links, All.
             conditionalPanel(condition = "input.display == 3",
                              br(),
                              title_out("links_title"),
                              plotlyOutput("links_plot")),
             
-            #Maff.
+            #Links, Secretaries.
             conditionalPanel(condition = "input.display == 4",
+                             title_out("secretary_title"),
+                             plotlyOutput("secretary_plot")),
+            
+            #Maff.
+            conditionalPanel(condition = "input.display == 5",
                              title_out("maff_title"),
                              br(),
                              heading_out("Location"),
@@ -466,34 +474,11 @@ ui <- fluidPage(
                              memory_helper("February 16, 2021"),
                              br(),
                              br(),
-                             heading_out("Secretaries"),
-                             br(),
-                             secretary_helper("March 24, 2011"),
-                             br(),
-                             secretary_helper("October 2, 2012"),
-                             br(),
-                             secretary_helper("October 1, 2016"),
-                             br(),
-                             secretary_helper("November 6, 2017"),
-                             br(),
-                             secretary_helper("March 18, 2020"),
-                             br(),
-                             secretary_helper("June 19, 2020"),
-                             br(),
-                             secretary_helper("October 21, 2020"),
-                             br(),
-                             secretary_helper("December 23, 2020"),
-                             br(),
-                             secretary_helper("January 2, 2021"),
-                             br(),
-                             secretary_helper("February 28, 2021"),
-                             br(),
-                             br(),
                              br(),
                              source_code()),
             
             #Raw Data.
-            conditionalPanel(condition = "input.display == 5",
+            conditionalPanel(condition = "input.display == 6",
                              title_out("rd_title"),
                              br(),
                              DTOutput("rd_table"),
@@ -519,6 +504,12 @@ server <- function(input, output) {
     likes %>%
       filter(Date >= input$date_in[1],
              Date <= input$date_in[2])
+  })
+  
+  df_sec <- reactive({
+    dfdf %>%
+      filter(!is.na(Secretary)) %>%
+      select(Date, Text, URL, Hovertext, Secretary)
   })
 
   #Distributions.
@@ -692,7 +683,7 @@ server <- function(input, output) {
   
   
   #Links.
-  output$links_title <- renderText("Click Point for Archived Report")
+  output$links_title <- renderText("Hover & Click Points to Open Archived Reports")
   
   #JavaScript to allow points to open URLs.
   js <- "
@@ -715,22 +706,22 @@ server <- function(input, output) {
                "1899-12-31 18:00:00", "1899-12-31 21:00:00")
   ticktext = hour_list
   #Axes and Legend setup.
-  xaxis <- list(title = "<b>What Time of Day?</b>",
-                titlefont = f1,
-                tickfont = f2,
-                tickvals = tickvals,
-                ticktext = ticktext,
-                y = 0.25)
-  yaxis <- list(title = "<b>When?</b>",
-                titlefont = f1,
-                tickfont = f2)
-  legend <- list(title = list(text = "<b>Who Can See It?</b>",
+  xaxis1 <- list(title = "<b>What Time of Day?</b>",
+                 titlefont = f1,
+                 tickfont = f2,
+                 tickvals = tickvals,
+                 ticktext = ticktext,
+                 y = 0.25)
+  yaxis1 <- list(title = "<b>When?</b>",
+                 titlefont = f1,
+                 tickfont = f2)
+  legend1 <- list(title = list(text = "<b>Who Can See It?</b>",
                               font = f1),
-                 font = f2,
-                 orientation = 'h',
-                 xanchor = 'center',
-                 x = 0.45,
-                 y = -0.3)
+                  font = f2,
+                  orientation = 'h',
+                  xanchor = 'center',
+                  x = 0.45,
+                  y = -0.3)
   
   output$links_plot <- renderPlotly({
     p <- plot_ly(data = df_update(),
@@ -747,13 +738,47 @@ server <- function(input, output) {
                  mode = "markers",
                  width = 850,
                  height = 550) %>%
-      layout(xaxis = xaxis,
-             yaxis = yaxis,
-             legend = legend) %>%
+      layout(xaxis = xaxis1,
+             yaxis = yaxis1,
+             legend = legend1) %>%
       onRender(js)
   })
   
   
+  
+  #Links.
+  output$secretary_title <- renderText("Hover & Click Points to Open Secretary Reports")
+  
+  xaxis2 <- list(title = "<b>When?</b>",
+                 titlefont = f1,
+                 tickfont = f2,
+                 y = 0.25)
+  yaxis2 <- list(title = "<b>Employees</b>",
+                 titlefont = f1,
+                 tickfont = f2,
+                 tickangle = -35,
+                 autorange = "reversed")
+  output$secretary_plot <- renderPlotly({
+    p <- plot_ly(data = df_sec(),
+                 x = ~Date,
+                 y = ~Secretary,
+                 color = ~Secretary,
+                 colors = viridis_pal(direction = -1, option = "D")(7),
+                 alpha = 0.75,
+                 marker = list(size = 20),
+                 text = ~Hovertext,
+                 hoverinfo = 'text',
+                 customdata = ~URL,
+                 type = "scatter",
+                 mode = "markers",
+                 width = 850,
+                 height = 550) %>%
+      layout(xaxis = xaxis2,
+             yaxis = yaxis2,
+             showlegend = FALSE) %>%
+      onRender(js)
+    })
+    
   
   #Maff.
   output$maff_title <- renderText("Some numbers...")
