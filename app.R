@@ -188,50 +188,70 @@ percent_conv <- function(number){
 #From Date, grab the URL, Reactions, and Comments.
 #Print a statement.
 social_helper <- function(post_date) {
-    
-    temp <- helper_df(post_date, T)
-    url <- temp[1, 3]
-    reactions <- temp[1, 4]
-    comments <- temp[1, 5]
+  temp <- helper_df(post_date, T)
+  url <- temp[1, 3]
+  reactions <- temp[1, 4]
+  comments <- temp[1, 5]
 
-    text_link("Post on ",
-              post_date,
-              url,
-              paste("had", reactions, "reactions and", comments, "comments."))
+  text_link("Post on ",
+            post_date,
+            url,
+            paste("had", reactions, "reactions and", comments, "comments."))
 }
 
 
 
 #Create double statement given a date that has two DF posts.
 double_helper <- function(post_date) {
-    
-    temp <- helper_df(post_date, T)
-    url1 <- temp[1, 3]
-    text1 <- temp[1, 9]    
-    url2 <- temp[2, 3]
-    text2 <- temp[2, 9] 
   
-    tagList(text_link(paste("On", post_date, "there was "),
-                      text1,
-                      url1),
-            text_link(" and ",
-                      text2,
-                      url2))
+  temp <- helper_df(post_date, T)
+  url1 <- temp[1, 3]
+  text1 <- temp[1, 9]    
+  url2 <- temp[2, 3]
+  text2 <- temp[2, 9] 
+  
+  tagList(text_link(paste("On", post_date, "there was "),
+                    text1,
+                    url1),
+          text_link(" and ",
+                    text2,
+                    url2))
 }
 
 
 
 #Create a memory statement given a date that has a post with memory.
 memory_helper <- function(post_date) {
+  
+  if (post_date == "March 20, 2012"){
+    p = '10100585675378759'
+    temp <- dfdf %>%
+      filter(Post == p | Reference == p)
+
+    temp_text <- c(", are memories of post on ",
+                   "Posts on ",
+                   ", ",
+                   ", ",
+                   ", and ")
+    tL_data <- NULL
+    for (i in c(2:5, 1)){
+      
+      tL_data <- c(tL_data, tagList(text_link(temp_text[i],
+                                              format(temp[['Date']][i], "%B %d, %Y"),
+                                              temp[['URL']][i])))
+    }
+    tL_data
     
+    
+  } else {
     temp <- helper_df(post_date, T)
     repost_url <- temp[1, 3]
     memory <- helper_df(temp[[6]], F)
-
+    
     if (post_date == "November 6, 2020"){
-        memory_url = paul_url
+      memory_url = paul_url
     } else {
-        memory_url = memory[1, 3]
+      memory_url = memory[1, 3]
     }
     
     tagList(text_link("Post on ",
@@ -240,6 +260,7 @@ memory_helper <- function(post_date) {
             text_link(" is a memory of post on ",
                       format(memory[[1]], "%B %d, %Y"),
                       memory_url))
+  }
 }
 
 
@@ -444,7 +465,11 @@ ui <- fluidPage(
                              br(),
                              double_helper("May 31, 2019"),
                              br(),
+                             double_helper("March 20, 2020"),
+                             br(),
                              double_helper("February 15, 2021"),
+                             br(),
+                             double_helper("March 20, 2021"),
                              br(),
                              br(),
                              heading_out("Memories"),
@@ -452,6 +477,10 @@ ui <- fluidPage(
                              memory_helper("December 16, 2019"),
                              br(),
                              text_out("As far as the ancient texts tell us, this is the original 'Dense Fog'."),
+                             br(),
+                             br(),
+                             memory_helper("March 20, 2012"),
+                             br(),
                              br(),
                              memory_helper("January 17, 2020"),
                              br(),
@@ -767,7 +796,7 @@ server <- function(input, output) {
                  x = ~Date,
                  y = ~Secretary,
                  color = ~Secretary,
-                 colors = viridis_pal(direction = -1, option = "D")(7),
+                 colors = viridis_pal(direction = -1, option = "D")(8),
                  alpha = 0.75,
                  marker = list(size = 20),
                  text = ~Hovertext,
