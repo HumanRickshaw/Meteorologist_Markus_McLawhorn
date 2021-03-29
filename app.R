@@ -2,7 +2,7 @@ library(dplyr)
 library(DT)
 library(forcats)
 library(ggplot2)
-library(ggridges)
+#library(ggridges)
 library(htmlwidgets)
 library(plotly)
 library(readxl)
@@ -49,6 +49,18 @@ dfdf <- dfdf %>%
            Text2 = ifelse(nchar(Text) > 50,
                           paste(substring(Text, 1, 50), "...", sep = ""),
                           Text))
+
+
+
+
+#Paul McCauley and Vicky Earp posted on their respective walls and tagged Mark, instead of posting on Mark's wall.
+#The URL format is thus inconsistent.
+paul_url <- "https://www.facebook.com/paul.mccauley.56/posts/10104874956579849"
+vicky_url <- "https://www.facebook.com/vickyvolcano/posts/10224539686495161"
+
+dfdf[(!is.na(dfdf$Secretary)) & (dfdf$Secretary == 'Paul McCauley'), ]$URL <- paul_url
+dfdf[(!is.na(dfdf$Secretary)) & (dfdf$Secretary == 'Vicky Earp'), ]$URL <- vicky_url
+
 
 
 
@@ -247,12 +259,7 @@ memory_helper <- function(post_date) {
     temp <- helper_df(post_date, T)
     repost_url <- temp[1, 3]
     memory <- helper_df(temp[[6]], F)
-    
-    if (post_date == "November 6, 2020"){
-      memory_url = paul_url
-    } else {
-      memory_url = memory[1, 3]
-    }
+    memory_url = memory[1, 3]
     
     tagList(text_link("Post on ",
                       post_date,
@@ -281,12 +288,6 @@ memory_helper <- function(post_date) {
 #              post_date,
 #              temp_url)
 #}
-
-
-
-#Paul McCauley posted on his wall and tagged Mark, instead of posting on Mark's wall.
-#The URL format is thus inconsistent.
-paul_url <- "https://www.facebook.com/paul.mccauley.56/posts/10104874956579849"
 
 
 
@@ -471,6 +472,8 @@ ui <- fluidPage(
                              br(),
                              double_helper("March 20, 2021"),
                              br(),
+                             double_helper("March 27, 2021"),
+                             br(),
                              br(),
                              heading_out("Memories"),
                              br(),
@@ -539,8 +542,6 @@ server <- function(input, output) {
     dfdf <- dfdf %>%
       filter(!is.na(Secretary)) %>%
       select(Date, Text, URL, Hovertext, Secretary)
-    
-    dfdf[dfdf$Secretary == 'Paul McCauley', 'URL'] <- paul_url
     
     dfdf
   })
@@ -796,7 +797,7 @@ server <- function(input, output) {
                  x = ~Date,
                  y = ~Secretary,
                  color = ~Secretary,
-                 colors = viridis_pal(direction = -1, option = "D")(8),
+                 colors = viridis_pal(direction = -1, option = "D")(9),
                  alpha = 0.75,
                  marker = list(size = 20),
                  text = ~Hovertext,
