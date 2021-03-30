@@ -2,7 +2,6 @@ library(dplyr)
 library(DT)
 library(forcats)
 library(ggplot2)
-#library(ggridges)
 library(htmlwidgets)
 library(plotly)
 library(readxl)
@@ -57,10 +56,12 @@ dfdf <- dfdf %>%
 #The URL format is thus inconsistent.
 paul_url <- "https://www.facebook.com/paul.mccauley.56/posts/10104874956579849"
 vicky_url <- "https://www.facebook.com/vickyvolcano/posts/10224539686495161"
+andrew_url <- "https://www.facebook.com/andrew.boyd.3705157/posts/782854065192133"
+marko_url <- "https://www.facebook.com/markmclawhorn.art/photos/a.48124181519/280231566519/"
 
 dfdf[(!is.na(dfdf$Secretary)) & (dfdf$Secretary == 'Paul McCauley'), ]$URL <- paul_url
 dfdf[(!is.na(dfdf$Secretary)) & (dfdf$Secretary == 'Vicky Earp'), ]$URL <- vicky_url
-
+dfdf[(!is.na(dfdf$Coworker)) & (dfdf$Coworker == 'Andrew Boyd'), ]$URL <- andrew_url
 
 
 
@@ -138,7 +139,7 @@ helper_df <- function(post_filter, boolean) {
             filter(Post == post_filter)
     }
     temp %>%
-        select(Date, oTime, URL, Reactions, Comments, Reference, Post, Secretary, Text)
+        select(Date, oTime, URL, Reactions, Comments, Reference, Post, Text)
 }
 
 
@@ -177,15 +178,22 @@ text_link <- function(string, anchor, hyperlink, optional) {
 
 #Maff Helper for stats.
 maff_helper <- function(df){
-    
-    df_posts <- dim(df)[1]
-    privacy <- percent_conv(dim(df[df$Privacy == "Public",])[1] / df_posts)
-    hour <- percent_conv(dim(df[df$Hour < 10,])[1] / df_posts)
-    month <- percent_conv(dim(df[df$Month %in% c("January", "February", "October", "November", "December"),])[1] / df_posts)
-    year <- percent_conv(dim(df[df$Year > 2016,])[1] / df_posts)
-    output <- list(privacy, hour, month, year)
-    
-    output
+  
+  df_posts <- dim(df)[1]
+  #What percent of posts are Public?
+  privacy <- percent_conv(dim(df[df$Privacy == "Public",])[1] / df_posts)
+  #What percent of posts are Memories?
+  memory <- percent_conv(length(df[!(is.na(df$Reference)),]) / df_posts)
+  #What percent of posts are between 6:00am - 10:00am?
+  hour <- percent_conv(dim(df[(df$Hour > 6) & (df$Hour < 10),])[1] / df_posts)
+  #What percent of posts are between October and February?
+  month <- percent_conv(dim(df[df$Month %in% c("January", "February", "October", "November", "December"),])[1] / df_posts)
+  #What percent of posts are from 2017 onward?
+  year_2017 <- percent_conv(dim(df[df$Year > 2016,])[1] / df_posts)
+  #What percent of posts are from 2017 onward?
+  year_COVID <- percent_conv(dim(df[df$Year > 2019,])[1] / df_posts)
+  
+  c(privacy, memory, hour, month, year_2017, year_COVID)
 }
 
 
@@ -213,21 +221,52 @@ social_helper <- function(post_date) {
 
 
 
+peer_helper <- function(df){
+  
+  #Those who posted on Mark's wall, or tagged him.
+  sec_list <- df[!(is.na(df$Secretary)),]$Secretary
+  #Those who Mark tagged.
+  co_list <- df[!(is.na(df$Coworker)),]$Coworker
+  co_total <- flatten_chr(strsplit(co_list, split="\r\n"))
+  
+  c(length(sec_list),
+    length(unique(sec_list)),
+    length(co_list),
+    length(co_total),
+    length(unique(co_total)))
+}
+
+
 #Create double statement given a date that has two DF posts.
 double_helper <- function(post_date) {
   
   temp <- helper_df(post_date, T)
   url1 <- temp[1, 3]
-  text1 <- temp[1, 9]    
+  text1 <- temp[1, 8]    
   url2 <- temp[2, 3]
-  text2 <- temp[2, 9] 
+  text2 <- temp[2, 8] 
   
-  tagList(text_link(paste("On", post_date, "there was "),
-                    text1,
-                    url1),
-          text_link(" and ",
-                    text2,
-                    url2))
+  #There is at least one triple statement.
+  if (dim(temp)[1] == 3) {
+    url3 <- temp[3, 3]
+    text3 <- temp[3, 8] 
+    tagList(text_link(paste("On", post_date, "there was "),
+                      text1,
+                      url1),
+            text_link(", ",
+                      text2,
+                      url2),
+            text_link(" and ",
+                      paste(text3, ".", sep = ""),
+                      url3))
+  } else {
+    tagList(text_link(paste("On", post_date, "there was "),
+                      text1,
+                      url1),
+            text_link(" and ",
+                      paste(text2, ".", sep = ""),
+                      url2))
+  }
 }
 
 
@@ -235,6 +274,7 @@ double_helper <- function(post_date) {
 #Create a memory statement given a date that has a post with memory.
 memory_helper <- function(post_date) {
   
+  #4 Shares.
   if (post_date == "March 20, 2012"){
     p = '10100585675378759'
     temp <- dfdf %>%
@@ -248,25 +288,66 @@ memory_helper <- function(post_date) {
     tL_data <- NULL
     for (i in c(2:5, 1)){
       
+      date_out <- format(temp[['Date']][i], "%B %d, %Y")
+      
+      if (i == 1){
+        date_out <- paste(date_out, ".", sep = "")
+      } 
+      
       tL_data <- c(tL_data, tagList(text_link(temp_text[i],
-                                              format(temp[['Date']][i], "%B %d, %Y"),
+                                              date_out,
                                               temp[['URL']][i])))
     }
     tL_data
     
+  #2 Shares.  
+  } else if (post_date == "January 17, 2018"){
+    p = '10105068234813719'
+    temp <- dfdf %>%
+      filter(Post == p | Reference == p)
     
+    temp_text <- c(", are memories of post on ",
+                   "Posts on ",
+                   " and ")
+    tL_data <- NULL
+    for (i in c(2:3, 1)){
+      
+      date_out <- format(temp[['Date']][i], "%B %d, %Y")
+      
+      if (i == 1){
+        date_out <- paste(date_out, ".", sep = "")
+      } 
+      
+      tL_data <- c(tL_data, tagList(text_link(temp_text[i],
+                                              date_out,
+                                              temp[['URL']][i])))
+    }
+    tL_data
+    
+  #Single Shares.
   } else {
     temp <- helper_df(post_date, T)
     repost_url <- temp[1, 3]
-    memory <- helper_df(temp[[6]], F)
-    memory_url = memory[1, 3]
+
+    
+    if (post_date == "January 28, 2021"){
+      second <- text_link(" is a memory of post on ",
+                          "January 28, 2010",
+                          marko_url)
+    } else {
+      memory <- helper_df(temp[[6]], F)
+      memory_url = memory[1, 3]
+      
+      second <- text_link(" is a memory of post on ",
+                          paste(format(memory[[1]], "%B %d, %Y"), ".", sep = ""),
+                          memory_url)
+      
+    }
     
     tagList(text_link("Post on ",
                       post_date,
                       repost_url),
-            text_link(" is a memory of post on ",
-                      format(memory[[1]], "%B %d, %Y"),
-                      memory_url))
+            second)
   }
 }
 
@@ -293,231 +374,263 @@ memory_helper <- function(post_date) {
 
 #Github URL.
 source_code <- function() {
-    text_link("ShinyApp Source Code in R can be found ",
-              "here",
-              "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R")
+  text_link("ShinyApp Source Code in R can be found ",
+            "here.",
+            "https://github.com/HumanRickshaw/Meteorologist_Markus_McLawhorn/blob/master/app.R")
 }
-    
-    
+
+
 
 # Define UI for app.
 ui <- fluidPage(
-
-    # Application title
-    titlePanel(h1(tagList(a("Meteorologist Markus McLawhorn",
-                            href = "https://media0.giphy.com/media/3orieZMmRdBlKk5nY4/giphy.gif"),
-                          "presents...DENSE FOG"))),
-
-    # Sidebar with output options.
-    sidebarLayout(
-        sidebarPanel(
-            width = 3,
-            h5("This is a shoutout to bruh..."),
-            h5("keeping us apprised of what's really going on."),
-            h3(strong(span("Choose Main Display"))),
-            selectInput("display", "", c("Distributions" = 1,
-                                         "Interactive" = 2,
-                                         "Links, All" = 3,
-                                         "Links, Secretaries" = 4,
-                                         "Maff" = 5,
-                                         "Raw Data" = 6),
-                        selected = 4),
-            
-            #Date is flexible for all choices.
-            sliderInput("date_in",
-                        "Date range :",
-                        as.Date(min(dfdf$Date)),
-                        as.Date(Sys.Date()),
-                        value = c(as.Date(min(dfdf$Date)), as.Date(Sys.Date()))),
-            
-            #Distributions
-            conditionalPanel(condition = "input.display == 1",
-                             selectInput("dist_var", "Variable :", c("Comment", "Date", "Hour", "Month", "Privacy", "Reaction", "Text", "Time", "Year")),
-                             conditionalPanel(condition = "input.dist_var == 'Comment' || input.dist_var == 'Reaction'",
-                                              selectInput("dist_x", "Sort By", c("Date of Post", "Time of Day"))),
-                             conditionalPanel(condition = "input.dist_var == 'Date' || input.dist_var == 'Time'",
-                                              sliderInput("num_bins",
-                                                          "Number of Bins",
-                                                          4, 24, value = 8))
-            ),
-            
-            #Interactive
-            conditionalPanel(condition = "input.display == 2",
-                             h5("Create your own Graph!"),
-                             selectInput("x_axis", "X-axis :", c("Comments" = 13,
-                                                                 "Date" = 1,
-                                                                 "Month" = 17,
-                                                                 "Time" = 2,
-                                                                 "Year" = 16)),
-                             selectInput("y_axis", "Y-axis :", c("Hour" = 19,
-                                                                 "Privacy" = 3,
-                                                                 "Reactions" = 20,
-                                                                 "Time" = 2)),
-                             selectInput("size", "Size :", c("Comments" = 13,
-                                                             "Hour" = 19,
-                                                             "Reactions" = 20,
-                                                             "Year" = 16)),
-                             selectInput("color", "Color :", c("Comments" = 13,
-                                                               "Hour" = 19,
-                                                               "Month" = 17,
-                                                               "Privacy" = 3,
-                                                               "Reactions" = 20,
-                                                               "Year" = 16)),
-                             ),
-                    ),
-        
-        
-        
-        #Show a plots and text based off of user selection.
-        mainPanel(
-            
-            #Distributions.
-            conditionalPanel(condition = "input.display == 1",
-                             plotOutput("dist_plot")),
-            #Interactive.
-            conditionalPanel(condition = "input.display == 2",
-                             title_out("interactive_title"),
-                             plotOutput("inter_plot")),
-            
-            #Links, All.
-            conditionalPanel(condition = "input.display == 3",
-                             br(),
-                             title_out("links_title"),
-                             plotlyOutput("links_plot")),
-            
-            #Links, Secretaries.
-            conditionalPanel(condition = "input.display == 4",
-                             title_out("secretary_title"),
-                             plotlyOutput("secretary_plot")),
-            
-            #Maff.
-            conditionalPanel(condition = "input.display == 5",
-                             title_out("maff_title"),
-                             br(),
-                             heading_out("Location"),
-                             br(),
-                             text_link("We assume Raleigh, but he is ",
-                                       "worldwide",
-                                       "https://upload.wikimedia.org/wikipedia/commons/6/6b/Rotating_globe.gif"),
-                             br(),
-                             text_link("On May 4th, 2019 he posted from ",
-                                       "Asheville, NC",
-                                       url_helper("10106177579962149")),
-                             br(),
-                             text_link("On January 21st, 2017 he ventured out to bougie-ass ",
-                                       "Cary, NC",
-                                       url_helper("10103980793270289")),
-                             br(),
-                             text_link("On November 29th, 2015, visiting his roots, he informed us from ",
-                                       "Mt. Afton, VA",
-                                       url_helper("10102987182504229")),
-                             br(),
-                             br(),
-                             heading_out("Privacy"),
-                             br(),
-                             text_out(paste("About",
-                                            maff_helper(dfdf)[1],
-                                            "of the posts are public.  He don't care about your political affiliation.")),
-                             br(),
-                             br(),
-                             heading_out("Social Engagement"),
-                             br(),
-                             text_link("FB introduced reactions on ",
-                                       "February 24, 2016",
-                                       "https://www.theverge.com/2016/2/24/11094374/facebook-reactions-like-button"),
-                             br(),
-                             social_helper("March 31, 2020"),
-                             br(),
-                             social_helper("April 25, 2017"),
-                             br(),
-                             social_helper("December 27, 2019"),
-                             br(),
-                             social_helper("November 5, 2020"),
-                             br(),
-                             br(),
-                             heading_out("When?"),
-                             br(),
-                             text_out(paste("Since",
-                                            paste(format(dfdf$Date[1], "%B %d, %Y"), ",", sep = ""),
-                                            "Young Markus has made",
-                                            nrow(dfdf),
-                                            "Facebook Weather Reports.")),
-                             br(),
-                             text_out(paste("About",
-                                            maff_helper(dfdf)[2],
-                                            "of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.")),
-                             br(),
-                             text_out(paste("About",
-                                            maff_helper(dfdf)[3],
-                                            "of the posts were made between October and February.  Our autumns & winters would be colder. Much colder.")),
-                             br(),
-                             text_out(paste("About",
-                                            maff_helper(dfdf)[4],
-                                            "of the posts were made in the past four years.  A safety beacon in these dark times, if you will.")),
-                             br(),
-                             br(),
-                             heading_out("Serious Weather Days"),
-                             br(),
-                             double_helper("April 16, 2011"),
-                             br(),
-                             double_helper("November 5, 2015"),
-                             br(),
-                             double_helper("January 21, 2017"),
-                             br(),
-                             double_helper("May 31, 2019"),
-                             br(),
-                             double_helper("March 20, 2020"),
-                             br(),
-                             double_helper("February 15, 2021"),
-                             br(),
-                             double_helper("March 20, 2021"),
-                             br(),
-                             double_helper("March 27, 2021"),
-                             br(),
-                             br(),
-                             heading_out("Memories"),
-                             br(),
-                             memory_helper("December 16, 2019"),
-                             br(),
-                             text_out("As far as the ancient texts tell us, this is the original 'Dense Fog'."),
-                             br(),
-                             br(),
-                             memory_helper("March 20, 2012"),
-                             br(),
-                             br(),
-                             memory_helper("January 17, 2020"),
-                             br(),
-                             memory_helper("January 21, 2020"),
-                             br(),
-                             memory_helper("November 5, 2020"),
-                             br(),
-                             memory_helper("November 6, 2020"),
-                             br(),
-                             memory_helper("December 5, 2020"),
-                             br(),
-                             memory_helper("December 6, 2020"),
-                             br(),
-                             memory_helper("December 14, 2020"),
-                             br(),
-                             memory_helper("January 3, 2021"),
-                             br(),
-                             memory_helper("January 17, 2021"),
-                             br(),
-                             memory_helper("February 16, 2021"),
-                             br(),
-                             br(),
-                             br(),
-                             source_code()),
-            
-            #Raw Data.
-            conditionalPanel(condition = "input.display == 6",
-                             title_out("rd_title"),
-                             br(),
-                             DTOutput("rd_table"),
-                             br(),
-                             source_code()),
-        )
+  
+  # Application title
+  titlePanel(h1(tagList(a("Meteorologist Markus McLawhorn",
+                          href = "https://media0.giphy.com/media/3orieZMmRdBlKk5nY4/giphy.gif"),
+                        "presents...DENSE FOG!"))),
+  
+  # Sidebar with output options.
+  sidebarLayout(
+    sidebarPanel(
+      width = 3,
+      h5("This is a shoutout to bruh..."),
+      h5("keeping us apprised of what's really going on."),
+      h3(strong(span("Choose Main Display"))),
+      selectInput("display", "", c("Distributions" = 1,
+                                   "Interactive" = 2,
+                                   "Links, All" = 3,
+                                   "Links, Peers" = 4,
+                                   "Maff" = 5,
+                                   "Raw Data" = 6),
+                  selected = 4),
+      
+      #Date is flexible for all choices.
+      sliderInput("date_in",
+                  "Date range :",
+                  as.Date(min(dfdf$Date)),
+                  as.Date(Sys.Date()),
+                  value = c(as.Date(min(dfdf$Date)), as.Date(Sys.Date()))),
+      
+      #Distributions
+      conditionalPanel(condition = "input.display == 1",
+                       selectInput("dist_var", "Variable :", c("Comment", "Date", "Hour", "Month", "Privacy", "Reaction", "Text", "Time", "Year")),
+                       conditionalPanel(condition = "input.dist_var == 'Comment' || input.dist_var == 'Reaction'",
+                                        selectInput("dist_x", "Sort By", c("Date of Post", "Time of Day"))),
+                       conditionalPanel(condition = "input.dist_var == 'Date' || input.dist_var == 'Time'",
+                                        sliderInput("num_bins",
+                                                    "Number of Bins",
+                                                    4, 24, value = 8))),
+      
+      #Interactive
+      conditionalPanel(condition = "input.display == 2",
+                       h5("Create your own Graph!"),
+                       selectInput("x_axis", "X-axis :", c("Comments" = 13,
+                                                           "Date" = 1,
+                                                           "Month" = 17,
+                                                           "Time" = 2,
+                                                           "Year" = 16)),
+                       selectInput("y_axis", "Y-axis :", c("Hour" = 19,
+                                                           "Privacy" = 3,
+                                                           "Reactions" = 20,
+                                                           "Time" = 2)),
+                       selectInput("size", "Size :", c("Comments" = 13,
+                                                       "Hour" = 19,
+                                                       "Reactions" = 20,
+                                                       "Year" = 16)),
+                       selectInput("color", "Color :", c("Comments" = 13,
+                                                         "Hour" = 19,
+                                                         "Month" = 17,
+                                                         "Privacy" = 3,
+                                                         "Reactions" = 20,
+                                                         "Year" = 16))),
+      
+      #Secretaries and Co-anchors.
+      conditionalPanel(condition = "input.display == 4",
+                       radioButtons("peers", "Select Peers!", c("Co-Anchors",
+                                                                "Secretaries")))),
+    
+    
+    
+    #Show a plots and text based off of user selection.
+    mainPanel(
+      
+      #Distributions.
+      conditionalPanel(condition = "input.display == 1",
+                       plotOutput("dist_plot")),
+      #Interactive.
+      conditionalPanel(condition = "input.display == 2",
+                       title_out("interactive_title"),
+                       plotOutput("inter_plot")),
+      
+      #Links, All.
+      conditionalPanel(condition = "input.display == 3",
+                       br(),
+                       title_out("links_title"),
+                       plotlyOutput("links_plot")),
+      
+      #Links, Secretaries.
+      conditionalPanel(condition = "input.display == 4",
+                       title_out("secretary_title"),
+                       plotlyOutput("secretary_plot")),
+      
+      #Maff.
+      conditionalPanel(condition = "input.display == 5",
+                       title_out("maff_title"),
+                       br(),
+                       heading_out("Location"),
+                       br(),
+                       text_link("We assume Raleigh, but he is ",
+                                 "worldwide",
+                                 "https://upload.wikimedia.org/wikipedia/commons/6/6b/Rotating_globe.gif"),
+                       br(),
+                       text_link("On May 4th, 2019 he posted from ",
+                                 "Asheville, NC.",
+                                 url_helper("10106177579962149")),
+                       br(),
+                       text_link("On January 21st, 2017 he ventured out to bougie-ass ",
+                                 "Cary, NC.",
+                                 url_helper("10103980793270289")),
+                       br(),
+                       text_link("On November 29th, 2015, visiting his roots, he informed us from ",
+                                 "Mt. Afton, VA.",
+                                 url_helper("10102987182504229")),
+                       br(),
+                       br(),
+                       heading_out("Privacy"),
+                       br(),
+                       text_out(paste("About",
+                                      maff_helper(dfdf)[1],
+                                      "of the posts are public.  He don't care about your political affiliation.")),
+                       br(),
+                       br(),
+                       heading_out("Social Engagement"),
+                       br(),
+                       text_out(paste(peer_helper(dfdf)[1],
+                                      "posts were made by one of ",
+                                      peer_helper(dfdf)[2],
+                                      "Secretaries.")),
+                       br(),
+                       text_out(paste(peer_helper(dfdf)[3],
+                                      "posts included ",
+                                      peer_helper(dfdf)[4],
+                                      "peers, who were one of",
+                                      peer_helper(dfdf)[5],
+                                      "Co-anchors.")),
+                       br(),
+                       br(),
+                       text_link("FB introduced reactions on ",
+                                 "February 24, 2016",
+                                 "https://www.theverge.com/2016/2/24/11094374/facebook-reactions-like-button"),
+                       br(),
+                       social_helper("March 31, 2020"),
+                       br(),
+                       social_helper("April 25, 2017"),
+                       br(),
+                       social_helper("December 27, 2019"),
+                       br(),
+                       social_helper("November 5, 2020"),
+                       br(),
+                       br(),
+                       heading_out("When?"),
+                       br(),
+                       text_out(paste("Since",
+                                      paste(format(dfdf$Date[1], "%B %d, %Y"), ",", sep = ""),
+                                      "Young Markus has made",
+                                      nrow(dfdf),
+                                      "Facebook Weather Reports.")),
+                       br(),
+                       text_out(paste("About",
+                                      maff_helper(dfdf)[2],
+                                      "of the posts are memories of previous weather reports.")),
+                       br(),
+                       text_out(paste("About",
+                                      maff_helper(dfdf)[3],
+                                      "of the posts were made between 06:00 - 10:00.  Helpin' us get started with our day.")),
+                       br(),
+                       text_out(paste("About",
+                                      maff_helper(dfdf)[4],
+                                      "of the posts were made between October and February.  Our autumns & winters would be colder. Much colder.")),
+                       br(),
+                       text_out(paste("About",
+                                      maff_helper(dfdf)[5],
+                                      "of the posts were made in the past four years.  A safety beacon in these dark times, if you will.")),
+                       br(),
+                       text_out(paste("About",
+                                      maff_helper(dfdf)[6],
+                                      "of the posts were made in 2020-2021.  COVID got us doing what we love.")),
+                       br(),
+                       br(),
+                       heading_out("Serious Weather Days"),
+                       br(),
+                       double_helper("April 16, 2011"),
+                       br(),
+                       double_helper("November 5, 2015"),
+                       br(),
+                       double_helper("January 21, 2017"),
+                       br(),
+                       double_helper("April 25, 2017"),
+                       br(),
+                       double_helper("April 9, 2019"),
+                       br(),
+                       double_helper("May 31, 2019"),
+                       br(),
+                       double_helper("March 20, 2020"),
+                       br(),
+                       double_helper("February 15, 2021"),
+                       br(),
+                       double_helper("March 20, 2021"),
+                       br(),
+                       double_helper("March 27, 2021"),
+                       br(),
+                       double_helper("March 28, 2021"),
+                       br(),
+                       br(),
+                       heading_out("Memories"),
+                       br(),
+                       memory_helper("December 16, 2019"),
+                       br(),
+                       text_out("As far as the ancient texts tell us, this is the original 'Dense Fog'."),
+                       br(),
+                       br(),
+                       memory_helper("March 20, 2012"),
+                       br(),
+                       br(),
+                       memory_helper("January 17, 2018"),
+                       br(),
+                       br(),
+                       memory_helper("January 21, 2020"),
+                       br(),
+                       memory_helper("February 5, 2020"),
+                       br(),
+                       memory_helper("November 5, 2020"),
+                       br(),
+                       memory_helper("November 6, 2020"),
+                       br(),
+                       memory_helper("December 5, 2020"),
+                       br(),
+                       memory_helper("December 6, 2020"),
+                       br(),
+                       memory_helper("December 14, 2020"),
+                       br(),
+                       memory_helper("January 3, 2021"),
+                       br(),
+                       memory_helper("January 28, 2021"),
+                       br(),
+                       memory_helper("February 16, 2021"),
+                       br(),
+                       br(),
+                       br(),
+                       source_code()),
+      
+      #Raw Data.
+      conditionalPanel(condition = "input.display == 6",
+                       title_out("rd_title"),
+                       br(),
+                       DTOutput("rd_table"),
+                       br(),
+                       source_code()),
     )
+  )
 )
 source
 
@@ -525,7 +638,7 @@ source
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    
+  
   #Filter Date.
   df_update <- reactive({
     dfdf %>%
@@ -541,10 +654,24 @@ server <- function(input, output) {
   df_sec <- reactive({
     dfdf <- dfdf %>%
       filter(!is.na(Secretary)) %>%
-      select(Date, Text, URL, Hovertext, Secretary)
+      select(Date, Text, URL, Hovertext, Secretary) %>%
+      `colnames<-`(c("Date", "Text", "URL", "Hovertext", "Emp"))
     
     dfdf
   })
+  
+  df_co <- reactive({
+    dfdf <- dfdf %>%
+      filter(!is.na(Coworker)) %>%
+      select(Date, Text, URL, Hovertext, Coworker) %>%
+      separate_rows(Coworker, sep = "\r\n") %>%
+      `colnames<-`(c("Date", "Text", "URL", "Hovertext", "Emp"))
+    print(dfdf)
+    
+    dfdf
+  })
+  
+ 
 
   #Distributions.
   output$dist_plot <- renderPlot({
@@ -750,7 +877,7 @@ server <- function(input, output) {
                  titlefont = f1,
                  tickfont = f2)
   legend1 <- list(title = list(text = "<b>Who Can See It?</b>",
-                              font = f1),
+                               font = f1),
                   font = f2,
                   orientation = 'h',
                   xanchor = 'center',
@@ -770,8 +897,8 @@ server <- function(input, output) {
                  customdata = ~URL,
                  type = "scatter",
                  mode = "markers",
-                 width = 850,
-                 height = 550) %>%
+                 width = 950,
+                 height = 650) %>%
       layout(xaxis = xaxis1,
              yaxis = yaxis1,
              legend = legend1) %>%
@@ -781,7 +908,15 @@ server <- function(input, output) {
   
   
   #Links.
-  output$secretary_title <- renderText("Hover & Click Points to Open Secretary Reports")
+  output$secretary_title <- renderText({
+    
+    if (input$peers == "Secretaries"){
+      end <- "Reports by Secretaries"
+    } else {
+      end <- "Reports with Co-Anchors"
+    }
+    paste("Hover & Click Points to Open", end)})
+  
   
   xaxis2 <- list(title = "<b>When?</b>",
                  titlefont = f1,
@@ -793,10 +928,17 @@ server <- function(input, output) {
                  tickangle = -35,
                  autorange = "reversed")
   output$secretary_plot <- renderPlotly({
-    p <- plot_ly(data = df_sec(),
+    
+    if (input$peers == "Secretaries"){
+      data <- df_sec()
+    } else {
+      data <- df_co()
+    }
+    
+    p <- plot_ly(data = data,
                  x = ~Date,
-                 y = ~Secretary,
-                 color = ~Secretary,
+                 y = ~Emp,
+                 color = ~Emp,
                  colors = viridis_pal(direction = -1, option = "D")(9),
                  alpha = 0.75,
                  marker = list(size = 20),
@@ -805,14 +947,15 @@ server <- function(input, output) {
                  customdata = ~URL,
                  type = "scatter",
                  mode = "markers",
-                 width = 850,
-                 height = 550) %>%
+                 width = 950,
+                 height = 650) %>%
       layout(xaxis = xaxis2,
              yaxis = yaxis2,
              showlegend = FALSE) %>%
       onRender(js)
-    })
-    
+  })
+
+      
   
   #Maff.
   output$maff_title <- renderText("Some numbers...")
