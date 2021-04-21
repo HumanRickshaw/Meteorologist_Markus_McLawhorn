@@ -4,6 +4,7 @@ library(forcats)
 library(ggplot2)
 library(htmlwidgets)
 library(plotly)
+library(purrr)
 library(readxl)
 library(scales)
 library(shiny)
@@ -14,6 +15,66 @@ library(viridis)
 
 hour_list <- c("00:00", "03:00", "06:00", "09:00",
                "12:00", "15:00", "18:00", "21:00")
+
+reaction_list <- c("Like", "Love", "Care", "Wow",
+                   "Haha", "Sad", "Angry")
+
+
+#Plotly constants.
+#JavaScript to allow points to open URLs.
+js <- "
+        function(el, x) {
+            el.on('plotly_click', function(d) {
+                var point = d.points[0];
+                var url = point.data.customdata[point.pointIndex];
+                window.open(url);
+                });
+                }"
+
+#Title fonts.
+f1 <- list(size = 24, color = "black")
+#Label font.
+f2 <- list(size = 18, color = "grey")
+#Times
+tickvals = c("1899-12-31 00:00:00", "1899-12-31 03:00:00",
+             "1899-12-31 06:00:00", "1899-12-31 09:00:00",
+             "1899-12-31 12:00:00", "1899-12-31 15:00:00",
+             "1899-12-31 18:00:00", "1899-12-31 21:00:00")
+ticktext = hour_list
+#Axes and Legend setup.
+xaxis0 <- list(title = "<b>How Many Reactions?</b>",
+               titlefont = f1,
+               tickfont = f2)
+yaxis0 <- list(title = "<b>How Many Comments?</b>",
+               titlefont = f1,
+               tickfont = f2)
+legend0 <- list(title = list(text = "<b>Who Can See It?</b>",
+                             font = f1),
+                font = f2,
+                orientation = 'h',
+                xanchor = 'center',
+                x = 0.45,
+                y = -0.3)
+
+xaxis1 <- list(title = "<b>What Time of Day?</b>",
+               titlefont = f1,
+               tickfont = f2,
+               tickvals = tickvals,
+               ticktext = ticktext,
+               y = 0.25)
+yaxis1 <- list(title = "<b>When?</b>",
+               titlefont = f1,
+               tickfont = f2)
+
+xaxis2 <- list(title = "<b>When?</b>",
+               titlefont = f1,
+               tickfont = f2,
+               y = 0.25)
+yaxis2 <- list(title = "<b>Employees</b>",
+               titlefont = f1,
+               tickfont = f2,
+               tickangle = -35,
+               autorange = "reversed")
 
 
 
@@ -34,11 +95,11 @@ url_helper <- function(post_num) {
 
 #Create Year, Create Date, format Hovertext and URL for links.
 dfdf <- dfdf %>%
-    mutate(Year = as.numeric(substr(Date, 1, 4)),
-           Month = factor(as.numeric(substr(Date, 6, 7)), levels = 12:1, labels = rev(month.name)),
+    mutate(Year = as.numeric(substr(Date, 1, 4)),                                                            #19
+           Month = factor(as.numeric(substr(Date, 6, 7)), levels = 12:1, labels = rev(month.name)),          #20
            Date = as.Date(Date),
-           oTime = strftime(Time, format = "%H:%M:%S", tz = "UTC" ),
-           Hour = as.integer(substr(oTime, 1, 2)),
+           oTime = strftime(Time, format = "%H:%M:%S", tz = "UTC" ),                                         #21
+           Hour = as.integer(substr(oTime, 1, 2)),                                                           #22
            Reactions = rowSums(.[6:12]),
            Hovertext = paste(Text,
                              format(Date, "%A %B %d, %Y"),
@@ -47,10 +108,11 @@ dfdf <- dfdf %>%
            URL = url_helper(Post),
            Text2 = ifelse(nchar(Text) > 50,
                           paste(substring(Text, 1, 50), "...", sep = ""),
-                          Text))
-
-
-
+                          Text),
+           Hovertext2 = paste(Text,
+                             paste(Reactions, "Reactions"),
+                             paste(Comments, "Comments"),
+                             sep = "<br>"),)
 
 #Paul McCauley and Vicky Earp posted on their respective walls and tagged Mark, instead of posting on Mark's wall.
 #The URL format is thus inconsistent.
@@ -65,15 +127,15 @@ dfdf[(!is.na(dfdf$Coworker)) & (dfdf$Coworker == 'Andrew Boyd'), ]$URL <- andrew
 
 
 
-#Create for Reacts stacks.
-likes <- dfdf[c(1, 18, 6:12)] %>%
-    gather(Reaction, Count, Like:Angry) %>%
-    mutate(Reaction = ordered(Reaction, levels = c("Like", "Love", "Care", "Wow", "Haha", "Sad", "Angry")))
+#Create for Reactions stacks.
+likes_df <- dfdf[c(1, 21, 6:12)] %>%
+  gather(Reaction, Count, Like:Angry) %>%
+  mutate(Reaction = ordered(Reaction, levels = reaction_list))
 
 
 
 #Viridis, Transpose, and Axes Info.
-gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool) {
+gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool, xsize) {
     
     #Viridis Color Scale.
     gg_object <- gg_object + scale_fill_viridis(discrete = discrete_bool, direction = -1)    
@@ -84,9 +146,9 @@ gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool) {
         #Modify labels and text.
         gg_object <- gg_object + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
                                        plot.caption = element_text(size = 8),
-                                       axis.text.x = element_text(size = 12),
+                                       axis.text.x = element_text(size = xsize),
                                        axis.title.x = element_text(size = 16, face = "bold"),
-                                       axis.text.y = element_text(hjust = 1, size = 14, angle = 20),
+                                       axis.text.y = element_text(hjust = 1, size = 12, angle = 20),
                                        axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
                                        legend.text = element_text(size = 12),
                                        legend.title = element_text(hjust = 0.5, size = 16, face = "bold"),
@@ -95,7 +157,7 @@ gg_helper <- function(gg_object, discrete_bool, legend_bool, transpose_bool) {
         #Modify labels and text.
         gg_object <- gg_object + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
                                        plot.caption = element_text(size = 8),
-                                       axis.text.x = element_text(hjust = 1, size = 6, angle = 45),
+                                       axis.text.x = element_text(hjust = 1, size = xsize, angle = 45),
                                        axis.title.x = element_text(size = 16, face = "bold"),
                                        axis.text.y = element_text(size = 12),
                                        axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
@@ -324,25 +386,35 @@ memory_helper <- function(post_date) {
     }
     tL_data
     
+  }
+  
   #Single Shares.
-  } else {
+  else {
+    
     temp <- helper_df(post_date, T)
     repost_url <- temp[1, 3]
-
     
-    if (post_date == "January 28, 2021"){
-      second <- text_link(" is a memory of post on ",
-                          "January 28, 2010",
-                          marko_url)
-    } else {
-      memory <- helper_df(temp[[6]], F)
+    if (post_date == "March 20, 2021") {
+      repost_url <- temp[2, 3]
+      memory <- helper_df(temp[[6]][2], F)
+      memory_date <- paste(format(memory[[1]], "%B %d, %Y"), ".", sep = "")
       memory_url = memory[1, 3]
-      
-      second <- text_link(" is a memory of post on ",
-                          paste(format(memory[[1]], "%B %d, %Y"), ".", sep = ""),
-                          memory_url)
-      
     }
+    
+    else if (post_date == "January 28, 2021") {
+      memory_date <- "January 28, 2010"
+      memory_url <- marko_url
+    }
+    
+    else {
+      memory <- helper_df(temp[[6]], F)
+      memory_date <- paste(format(memory[[1]], "%B %d, %Y"), ".", sep = "")
+      memory_url = memory[1, 3]
+    }
+    
+    second <- text_link(" is a memory of post on ",
+                        memory_date,
+                        memory_url)
     
     tagList(text_link("Post on ",
                       post_date,
@@ -396,13 +468,14 @@ ui <- fluidPage(
       h5("This is a shoutout to bruh..."),
       h5("keeping us apprised of what's really going on."),
       h3(strong(span("Choose Main Display"))),
-      selectInput("display", "", c("Distributions" = 1,
-                                   "Interactive" = 2,
-                                   "Links, All" = 3,
-                                   "Links, Peers" = 4,
-                                   "Maff" = 5,
-                                   "Raw Data" = 6),
-                  selected = 4),
+      selectInput("display", "", c("Comments/Reactions" = 1,
+                                   "Distributions" = 2,
+                                   "Interactive (under construction)" = 3,
+                                   "Links, All" = 4,
+                                   "Links, Peers" = 5,
+                                   "Maff" = 6,
+                                   "Raw Data" = 7),
+                  selected = 1),
       
       #Date is flexible for all choices.
       sliderInput("date_in",
@@ -413,16 +486,30 @@ ui <- fluidPage(
       
       #Distributions
       conditionalPanel(condition = "input.display == 1",
-                       selectInput("dist_var", "Variable :", c("Comment", "Date", "Hour", "Month", "Privacy", "Reaction", "Text", "Time", "Year")),
-                       conditionalPanel(condition = "input.dist_var == 'Comment' || input.dist_var == 'Reaction'",
-                                        selectInput("dist_x", "Sort By", c("Date of Post", "Time of Day"))),
+                       radioButtons("social0", "Social Engagment", c("Links",
+                                                                     "Deep Dive")),
+                       conditionalPanel(condition = "input.social0 == 'Deep Dive'",
+                                        radioButtons("social1", "Select Data!", c("Comments",
+                                                                                  "Reactions")),
+                                        radioButtons("social2", "Select Display!", c("Cumulative",
+                                                                                     "Distribution Bins")),
+                                        radioButtons("social3", "Select X-axis!", c("Date of Post",
+                                                                                    "Time of Day")),
+                                        conditionalPanel(condition = "input.social1 == 'Reactions'",
+                                                         checkboxGroupInput("reaclist", "Reactions to Plot",
+                                                                            reaction_list,
+                                                                            selected = reaction_list)))),
+                       
+      #Distributions
+      conditionalPanel(condition = "input.display == 2",
+                       selectInput("dist_var", "Variable :", c("Date", "Hour", "Month", "Privacy", "Text", "Time", "Year")),
                        conditionalPanel(condition = "input.dist_var == 'Date' || input.dist_var == 'Time'",
                                         sliderInput("num_bins",
                                                     "Number of Bins",
                                                     4, 24, value = 8))),
       
       #Interactive
-      conditionalPanel(condition = "input.display == 2",
+      conditionalPanel(condition = "input.display == 3",
                        h5("Create your own Graph!"),
                        selectInput("x_axis", "X-axis :", c("Comments" = 13,
                                                            "Date" = 1,
@@ -445,7 +532,7 @@ ui <- fluidPage(
                                                          "Year" = 16))),
       
       #Secretaries and Co-anchors.
-      conditionalPanel(condition = "input.display == 4",
+      conditionalPanel(condition = "input.display == 5",
                        radioButtons("peers", "Select Peers!", c("Co-Anchors",
                                                                 "Secretaries")))),
     
@@ -454,27 +541,35 @@ ui <- fluidPage(
     #Show a plots and text based off of user selection.
     mainPanel(
       
-      #Distributions.
+      #Comments/Reactions
       conditionalPanel(condition = "input.display == 1",
+                       conditionalPanel(condition = "input.social0 == 'Links'",
+                                        title_out("social_title"),
+                                        plotlyOutput("social_plotly")),
+                       conditionalPanel(condition = "input.social0 == 'Deep Dive'",
+                                        plotOutput("social_plot"))),
+      
+      #Distributions.
+      conditionalPanel(condition = "input.display == 2",
                        plotOutput("dist_plot")),
       #Interactive.
-      conditionalPanel(condition = "input.display == 2",
+      conditionalPanel(condition = "input.display == 3",
                        title_out("interactive_title"),
                        plotOutput("inter_plot")),
       
       #Links, All.
-      conditionalPanel(condition = "input.display == 3",
+      conditionalPanel(condition = "input.display == 4",
                        br(),
                        title_out("links_title"),
                        plotlyOutput("links_plot")),
       
       #Links, Secretaries.
-      conditionalPanel(condition = "input.display == 4",
+      conditionalPanel(condition = "input.display == 5",
                        title_out("secretary_title"),
                        plotlyOutput("secretary_plot")),
       
       #Maff.
-      conditionalPanel(condition = "input.display == 5",
+      conditionalPanel(condition = "input.display == 6",
                        title_out("maff_title"),
                        br(),
                        heading_out("Location"),
@@ -505,6 +600,16 @@ ui <- fluidPage(
                        br(),
                        heading_out("Social Engagement"),
                        br(),
+                       text_out(paste("Since",
+                                      paste(format(dfdf$Date[1], "%B %d, %Y"), ",", sep = ""),
+                                      "Young Markus has made",
+                                      nrow(dfdf),
+                                      "Facebook Weather Reports, which have accumulated",
+                                      sum(dfdf$Comments),
+                                      "comments and",
+                                      sum(dfdf$Reactions),
+                                      "reactions.")),
+                       br(),
                        text_out(paste(peer_helper(dfdf)[1],
                                       "posts were made by one of ",
                                       peer_helper(dfdf)[2],
@@ -533,11 +638,7 @@ ui <- fluidPage(
                        br(),
                        heading_out("When?"),
                        br(),
-                       text_out(paste("Since",
-                                      paste(format(dfdf$Date[1], "%B %d, %Y"), ",", sep = ""),
-                                      "Young Markus has made",
-                                      nrow(dfdf),
-                                      "Facebook Weather Reports.")),
+
                        br(),
                        text_out(paste("About",
                                       maff_helper(dfdf)[2],
@@ -618,12 +719,14 @@ ui <- fluidPage(
                        br(),
                        memory_helper("February 16, 2021"),
                        br(),
+                       memory_helper("March 20, 2021"),
+                       br(),
                        br(),
                        br(),
                        source_code()),
       
       #Raw Data.
-      conditionalPanel(condition = "input.display == 6",
+      conditionalPanel(condition = "input.display == 7",
                        title_out("rd_title"),
                        br(),
                        DTOutput("rd_table"),
@@ -632,7 +735,6 @@ ui <- fluidPage(
     )
   )
 )
-source
 
 
 
@@ -645,8 +747,8 @@ server <- function(input, output) {
       filter(Date >= input$date_in[1],
              Date <= input$date_in[2])
   })
-  like <- reactive({
-    likes %>%
+  likes <- reactive({
+    likes_df %>%
       filter(Date >= input$date_in[1],
              Date <= input$date_in[2])
   })
@@ -666,158 +768,284 @@ server <- function(input, output) {
       select(Date, Text, URL, Hovertext, Coworker) %>%
       separate_rows(Coworker, sep = "\r\n") %>%
       `colnames<-`(c("Date", "Text", "URL", "Hovertext", "Emp"))
-    print(dfdf)
-    
     dfdf
   })
   
  
+  
+  #Comments/Reactions.
+  
+  #Links
+  output$social_title <- renderText("Hover & Click Points to Open Archived Reports")
+  
+  output$social_plotly <- renderPlotly({
+    
+    temp_df <- df_update() %>%
+      select(Reactions, Comments, Date, Hovertext2, URL) %>%
+      mutate(Date = as.integer(Date)) %>%
+      mutate(Index = (2*Comments + Reactions) / 46)
+    
+    p <- plot_ly(data = temp_df,
+                 x = ~Reactions,
+                 y = ~Comments,
+                 alpha = 0.75,
+                 marker = list(size = 20),
+                 color = ~Index,
+                 text = ~Hovertext2,
+                 hoverinfo = 'text',
+                 customdata = ~URL,
+                 type = "scatter",
+                 mode = "markers",
+                 width = 950,
+                 height = 650) %>%
+      
+      colorbar(title = "<b>Popularity Index \n(From 2*C + R)</b>",
+               len = 0.8,
+               thickness = 40,
+               titlefont = list(size = 20, color = "black"),
+               tickfont = f2) %>%
+      
+      layout(xaxis = xaxis0,
+             yaxis = yaxis0) %>%
+      
+      onRender(js)
 
-  #Distributions.
-  output$dist_plot <- renderPlot({
-    #Comments.
-    if (input$dist_var == "Comment") {
-      #Stacked Bar Chart.
-      if (input$dist_x == "Date of Post") {
-        g1 <- ggplot(data = df_update(), aes(x = as.character(Date), y = Comments, fill = Comments))
-      } else {
-        g1 <- ggplot(data = df_update(), aes(x = as.character(oTime), y = Comments, fill = Comments))
+    })
+  
+  #Deep Dive
+  output$social_plot <- renderPlot({
+    
+    #Cumulative Sums
+    if (input$social2 == "Cumulative") {
+      
+      #Comments.
+      if (input$social1 == "Comments") {
+        if (input$social3 == "Date of Post") {
+          
+          com_date_df <- df_update() %>%
+            select(Date, Comments) %>%
+            mutate(cumsum = cumsum(Comments))
+          
+          g1 <- ggplot(data = com_date_df, aes(x = Date, y = cumsum))
+          g1 <- g1 + ggtitle("Comments Over Time") +
+            scale_x_date("When He Tell Us?", expand = c(0,0), date_breaks = "2 years", date_labels = "%Y")
+        }
+        else if (input$social3 == "Time of Day") {
+          
+          com_time_df <- df_update() %>%
+            select(Time, Comments) %>%
+            arrange(Time) %>%
+            mutate(cumsum = cumsum(Comments))
+          
+          g1 <- ggplot(data = com_time_df, aes(x = Time, y = cumsum))
+          g1 <- g1 + ggtitle("Comments Over Time of Day") +
+            scale_x_datetime("When He Tell Us?", expand = c(0,0), date_breaks = "3 hours", date_labels = hour_list)
+        }
+        g1 <- g1 + labs(caption = "Comments are numbers from original posts.")
+        g1 <- g1 + geom_line(color = viridis(5)[3], size = 2) + scale_y_continuous("How Many Comments?", expand = c(0,0))
+        gg_helper(g1, FALSE, FALSE, FALSE, 12)
       }
-      g1 <- g1 + labs(caption = "Comments are numbers from original posts.")
-      g1 <- g1 + geom_bar(stat = "identity")
-      #Axis Labels.
-      g1 <- g1 + ggtitle("Distribution of Updates") +
-        scale_x_discrete("When He Tell Us?", expand = c(0,0)) +
-        scale_y_continuous("How Many Comments?", expand = c(0,0))
-      gg_helper(g1, FALSE, FALSE, FALSE)
-    }
-    
-    #Date.
-    else if (input$dist_var == "Date") {
-      #Histogram
-      g1 <- ggplot(data = df_update(), aes(x = Date, fill = factor(Date)))
-      g1 <- g1 + geom_histogram(bins = input$num_bins)
-      #Axis Labels.
-      g1 <- g1 + ggtitle("Distribution of Updates") +
-        scale_x_date("When He Tell Us?", expand = c(0,0)) +
-        scale_y_continuous("How Many Posts?", expand = c(0,0))
       
-      gg_helper(g1, TRUE, FALSE, TRUE)
-    }
-    
-    #Hour.
-    else if (input$dist_var == "Hour") {
-      #Histogram
-      g1 <- ggplot(data = df_update(), aes(x = Hour, fill = factor(Hour)))
-      g1 <- g1 + geom_bar()
-      #Axis Labels.
-      g1 <- g1 + ggtitle("Distribution of Updates") +
-        scale_x_continuous("What Hour?", breaks = c(0, 3, 6, 9, 12, 15, 18, 21),
-                           labels = hour_list, expand = c(0,0)) +
-        scale_y_continuous("How Many Posts?", expand = c(0,0))
-      
-      gg_helper(g1, TRUE, FALSE, TRUE)
-    }
-    
-    #Month.
-    else if (input$dist_var == "Month") {
-      #Histogram
-      g1 <- ggplot(data = df_update(), aes(x = Month, fill = Month))
-      g1 <- g1 + geom_bar()
-      #Axis Labels.
-      g1 <- g1 + ggtitle("Distribution of Updates") +
-        scale_x_discrete("What Month?", expand = c(0,0), labels = rev(month.name), drop = FALSE) +
-        scale_y_continuous("How Many Posts?", expand = c(0,0))
-      
-      gg_helper(g1, TRUE, FALSE, TRUE)
-    }
-    
-    #Privacy.
-    else if (input$dist_var == "Privacy") {
-      #Histogram
-      g1 <- ggplot(data = df_update(), aes(x = reorder(Privacy, desc(Privacy)), fill = reorder(Privacy, desc(Privacy))))
-      g1 <- g1 + geom_bar()
-      #Axis Labels.
-      g1 <- g1 + ggtitle("Distribution of Updates") +
-        scale_x_discrete("Who Can See Dat?", expand = c(0,0)) +
-        scale_y_continuous("How Many Posts?", expand = c(0,0))
-      
-      gg_helper(g1, TRUE, FALSE, TRUE)
-    }
-    
-    #Reactions.
-    else if (input$dist_var == "Reaction") {
-      #Stacked Bar Chart.
-      if (input$dist_x == "Date of Post") {
-        g1 <- ggplot(data = like(), aes(x = as.character(Date), y = Count, fill = Reaction))
-      } else {
-        g1 <- ggplot(data = like(), aes(x = as.character(oTime), y = Count, fill = Reaction))
+      #Reactions.
+      else if (input$social1 == "Reactions") {
+        if (input$social3 == "Date of Post") {
+          
+          reac_date_df <- df_update() %>%
+            select(Date, Like:Angry) %>%
+            mutate(Like = cumsum(Like),
+                   Love = cumsum(Love),
+                   Wow = cumsum(Wow),
+                   Haha = cumsum(Haha),
+                   Sad = cumsum(Sad),
+                   Care = cumsum(Care),
+                   Angry = cumsum(Angry)) %>%
+            gather(Reaction, Count, Like:Angry) %>%
+            mutate(Reaction = ordered(Reaction, levels = reaction_list)) %>%
+            filter(Reaction %in% input$reaclist)
+          
+          g1 <- ggplot(data = reac_date_df, aes(x = Date, y = Count, color = Reaction)) 
+          g1 <- g1 + ggtitle("Reactions Over Time") +
+            scale_x_date("When He Tell Us?", expand = c(0,0), date_breaks = "2 years", date_labels = "%Y") +
+            scale_color_viridis(direction = -1, discrete = TRUE)
+        }
+        
+        else if (input$social3 == "Time of Day") {
+          
+          reac_time_df <- df_update() %>%
+            select(Time, Like:Angry) %>%
+            arrange(Time) %>%
+            mutate(Like = cumsum(Like),
+                   Love = cumsum(Love),
+                   Wow = cumsum(Wow),
+                   Haha = cumsum(Haha),
+                   Sad = cumsum(Sad),
+                   Care = cumsum(Care),
+                   Angry = cumsum(Angry)) %>%
+            gather(Reaction, Count, Like:Angry) %>%
+            mutate(Reaction = ordered(Reaction, levels = reaction_list)) %>%
+            filter(Reaction %in% input$reaclist)
+          
+          g1 <- ggplot(data = reac_time_df, aes(x = Time, y = Count, color = Reaction)) 
+          g1 <- g1 + ggtitle("Reactions Over Time of Day") +
+            scale_x_datetime("When He Tell Us?", expand = c(0,0), date_breaks = "3 hours", date_labels = hour_list) +
+            scale_color_viridis(direction = -1, discrete = TRUE)
+        }
+        g1 <- g1 + labs(caption = "Reactions are numbers from original posts.")
+        g1 <- g1 + geom_line(size = 1.5) + scale_y_continuous("How Many Reactions?", expand = c(0,0))
+        gg_helper(g1, FALSE, TRUE, FALSE, 12)
       }
-      g1 <- g1 + labs(caption = "Likes and reactions are numbers from original posts.")            
-      g1 <- g1 + geom_bar(position = "stack", stat = "identity")
-      #Axis Labels.
-      g1 <- g1 + scale_x_discrete("When He Tell Us???", expand = c(0,0)) +
-        scale_y_continuous("Count of Reactions", expand = c(0,0))
-      gg_helper(g1, TRUE, TRUE, FALSE)
-      
-    }
-    #Text.
-    else if (input$dist_var == "Text") {
-      #Histogram
-      g1 <- ggplot(data = df_update(), aes(x = Text2, fill = Text2))
-      g1 <- g1 + geom_bar()
-      #Axis Labels.
-      g1 <- g1 + ggtitle("Distribution of Updates") +
-        scale_x_discrete("What the Forecast???", expand = c(0,0)) +
-        scale_y_continuous("How many times he did it!", expand = c(0,0))
-      #Viridis Color Scale.
-      g1 <- g1 + scale_fill_viridis(discrete = TRUE)    
-      #Modify labels and text.
-      g1 <- g1 + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
-                       axis.text.x = element_text(hjust = 1, size = 5, angle = 60),
-                       axis.title.x = element_text(size = 16, face = "bold"),
-                       axis.text.y = element_text(hjust = 1, size = 12),
-                       axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
-                       legend.position = "none")
-      g1
     }
     
-    #Time.
-    else if (input$dist_var == "Time") {
-      #Histogram
-      g1 <- ggplot(data = df_update(), aes(x = Time, fill = factor(Time)))
-      g1 <- g1 + geom_histogram(bins = input$num_bins)
-      #Axis Labels.
-      g1 <- g1 + ggtitle("Distribution of Updates") +
-        scale_x_datetime("What Time of Day?", expand = c(0,0),
-                         breaks = date_breaks("3 hour"),
-                         labels = date_format("%H:%M")) +
-        scale_y_continuous("How Many Posts?", expand = c(0,0))
+    #Distribution Bins
+    else if (input$social2 == "Distribution Bins") {
       
-      gg_helper(g1, TRUE, FALSE, TRUE)
-    }
-    
-    #Year.
-    else if (input$dist_var == "Year") {
-      #Histogram
-      g1 <- ggplot(data = df_update(), aes(x = Year, fill = factor(Year)))
-      g1 <- g1 + geom_histogram(binwidth = 1)
-      #Axis Labels.
-      g1 <- g1 + ggtitle("Distribution of Updates") +
-        scale_x_continuous("What Year?", expand = c(0,0),
-                           breaks = c(2008, 2011, 2014, 2017, 2020),
-                           labels = c(2008, 2011, 2014, 2017, 2020)) +
-        scale_y_continuous("How Many Posts?", expand = c(0,0))
+      #Comments.
+      if (input$social1 == "Comments") {
+        
+        #Stacked Bar Chart.
+        if (input$social3 == "Date of Post") {
+          g1 <- ggplot(data = df_update(), aes(x = as.character(Date), y = Comments, fill = Comments))
+        } else {
+          g1 <- ggplot(data = df_update(), aes(x = as.character(oTime), y = Comments, fill = Comments))
+        }
+        g1 <- g1 + labs(caption = "Comments are numbers from original posts.")
+        g1 <- g1 + geom_bar(stat = "identity")
+        #Axis Labels.
+        g1 <- g1 + ggtitle("Distribution of Updates") +
+          scale_x_discrete("When He Tell Us?", expand = c(0,0)) +
+          scale_y_continuous("How Many Comments?", expand = c(0,0))
+        gg_helper(g1, FALSE, FALSE, FALSE, 5)
+      }
       
-      gg_helper(g1, TRUE, FALSE, TRUE)
+      #Reactions.
+      else if (input$social1 == "Reactions") {
+        
+        #Stacked Bar Chart.
+        if (input$social3 == "Date of Post") {
+          g1 <- ggplot(data = likes(), aes(x = as.character(Date), y = Count, fill = Reaction))
+        } else {
+          g1 <- ggplot(data = likes(), aes(x = as.character(oTime), y = Count, fill = Reaction))
+        }
+        g1 <- g1 + labs(caption = "Likes and reactions are numbers from original posts.")            
+        g1 <- g1 + geom_bar(position = "stack", stat = "identity")
+        #Axis Labels.
+        g1 <- g1 + scale_x_discrete("When He Tell Us???", expand = c(0,0)) +
+          scale_y_continuous("Count of Reactions", expand = c(0,0))
+        gg_helper(g1, TRUE, TRUE, FALSE, 5)
+      }
     }
   },
   
   #Bar Chart/Histogram size.
   width = 1200,
   height = 750,
-  res = 150
-  )
+  res = 150)
+  
+
+  #Distributions.
+  output$dist_plot <- renderPlot({
+
+      #Text.
+      if (input$dist_var == "Text") {
+        #Histogram
+        g1 <- ggplot(data = df_update(), aes(x = Text2, fill = Text2))
+        g1 <- g1 + geom_bar()
+        #Axis Labels.
+        g1 <- g1 + ggtitle("Distribution of Updates") +
+          scale_x_discrete("What the Forecast???", expand = c(0,0)) +
+          scale_y_continuous("How many times he did it!", expand = c(0,0))
+        #Viridis Color Scale.
+        g1 <- g1 + scale_fill_viridis(discrete = TRUE)    
+        #Modify labels and text.
+        g1 <- g1 + theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+                         axis.text.x = element_text(hjust = 1, size = 5, angle = 60),
+                         axis.title.x = element_text(size = 16, face = "bold"),
+                         axis.text.y = element_text(hjust = 1, size = 12),
+                         axis.title.y = element_text(hjust = 0.5, size = 16, face = "bold"),
+                         legend.position = "none")
+        g1
+      }
+      
+      else {
+        #Date.
+        if (input$dist_var == "Date") {
+          #Histogram
+          g1 <- ggplot(data = df_update(), aes(x = Date, fill = factor(Date)))
+          g1 <- g1 + geom_histogram(bins = input$num_bins)
+          #Axis Labels.
+          g1 <- g1 + ggtitle("Distribution of Updates") +
+            scale_x_date("When He Tell Us?", expand = c(0,0)) +
+            scale_y_continuous("How Many Posts?", expand = c(0,0))
+        }
+        
+        #Hour.
+        else if (input$dist_var == "Hour") {
+          #Histogram
+          g1 <- ggplot(data = df_update(), aes(x = Hour, fill = factor(Hour)))
+          g1 <- g1 + geom_bar()
+          #Axis Labels.
+          g1 <- g1 + ggtitle("Distribution of Updates") +
+            scale_x_continuous("What Hour?", breaks = c(0, 3, 6, 9, 12, 15, 18, 21),
+                               labels = hour_list, expand = c(0,0)) +
+            scale_y_continuous("How Many Posts?", expand = c(0,0))
+        }
+        
+        #Month.
+        else if (input$dist_var == "Month") {
+          #Histogram
+          g1 <- ggplot(data = df_update(), aes(x = Month, fill = Month))
+          g1 <- g1 + geom_bar()
+          #Axis Labels.
+          g1 <- g1 + ggtitle("Distribution of Updates") +
+            scale_x_discrete("What Month?", expand = c(0,0), labels = rev(month.name), drop = FALSE) +
+            scale_y_continuous("How Many Posts?", expand = c(0,0))
+        }
+        
+        #Privacy.
+        else if (input$dist_var == "Privacy") {
+          #Histogram
+          g1 <- ggplot(data = df_update(), aes(x = reorder(Privacy, desc(Privacy)), fill = reorder(Privacy, desc(Privacy))))
+          g1 <- g1 + geom_bar()
+          #Axis Labels.
+          g1 <- g1 + ggtitle("Distribution of Updates") +
+            scale_x_discrete("Who Can See Dat?", expand = c(0,0)) +
+            scale_y_continuous("How Many Posts?", expand = c(0,0))
+        }
+        
+        #Time.
+        else if (input$dist_var == "Time") {
+          #Histogram
+          g1 <- ggplot(data = df_update(), aes(x = Time, fill = factor(Time)))
+          g1 <- g1 + geom_histogram(bins = input$num_bins)
+          #Axis Labels.
+          g1 <- g1 + ggtitle("Distribution of Updates") +
+            scale_x_datetime("What Time of Day?", expand = c(0,0),
+                             breaks = date_breaks("3 hour"),
+                             labels = date_format("%H:%M")) +
+            scale_y_continuous("How Many Posts?", expand = c(0,0))
+        }
+        
+        #Year.
+        else if (input$dist_var == "Year") {
+          #Histogram
+          g1 <- ggplot(data = df_update(), aes(x = Year, fill = factor(Year)))
+          g1 <- g1 + geom_histogram(binwidth = 1)
+          #Axis Labels.
+          g1 <- g1 + ggtitle("Distribution of Updates") +
+            scale_x_continuous("What Year?", expand = c(0,0),
+                               breaks = c(2008, 2011, 2014, 2017, 2020),
+                               labels = c(2008, 2011, 2014, 2017, 2020)) +
+            scale_y_continuous("How Many Posts?", expand = c(0,0))
+        }
+        
+        gg_helper(g1, TRUE, FALSE, TRUE, 12)
+      }
+  },
+  
+  #Bar Chart/Histogram size.
+  width = 1200,
+  height = 750,
+  res = 150)
   
   
   
@@ -846,45 +1074,7 @@ server <- function(input, output) {
   #Links.
   output$links_title <- renderText("Hover & Click Points to Open Archived Reports")
   
-  #JavaScript to allow points to open URLs.
-  js <- "
-        function(el, x) {
-            el.on('plotly_click', function(d) {
-                var point = d.points[0];
-                var url = point.data.customdata[point.pointIndex];
-                window.open(url);
-                });
-                }"
-  
-  #Title fonts.
-  f1 <- list(size = 24, color = "black")
-  #Label font.
-  f2 <- list(size = 18, color = "grey")
-  #Times
-  tickvals = c("1899-12-31 00:00:00", "1899-12-31 03:00:00",
-               "1899-12-31 06:00:00", "1899-12-31 09:00:00",
-               "1899-12-31 12:00:00", "1899-12-31 15:00:00",
-               "1899-12-31 18:00:00", "1899-12-31 21:00:00")
-  ticktext = hour_list
-  #Axes and Legend setup.
-  xaxis1 <- list(title = "<b>What Time of Day?</b>",
-                 titlefont = f1,
-                 tickfont = f2,
-                 tickvals = tickvals,
-                 ticktext = ticktext,
-                 y = 0.25)
-  yaxis1 <- list(title = "<b>When?</b>",
-                 titlefont = f1,
-                 tickfont = f2)
-  legend1 <- list(title = list(text = "<b>Who Can See It?</b>",
-                               font = f1),
-                  font = f2,
-                  orientation = 'h',
-                  xanchor = 'center',
-                  x = 0.45,
-                  y = -0.3)
-  
-  output$links_plot <- renderPlotly({
+   output$links_plot <- renderPlotly({
     p <- plot_ly(data = df_update(),
                  x = ~Time,
                  y = ~Date,
@@ -901,7 +1091,7 @@ server <- function(input, output) {
                  height = 650) %>%
       layout(xaxis = xaxis1,
              yaxis = yaxis1,
-             legend = legend1) %>%
+             legend = legend0) %>%
       onRender(js)
   })
   
@@ -916,17 +1106,7 @@ server <- function(input, output) {
       end <- "Reports with Co-Anchors"
     }
     paste("Hover & Click Points to Open", end)})
-  
-  
-  xaxis2 <- list(title = "<b>When?</b>",
-                 titlefont = f1,
-                 tickfont = f2,
-                 y = 0.25)
-  yaxis2 <- list(title = "<b>Employees</b>",
-                 titlefont = f1,
-                 tickfont = f2,
-                 tickangle = -35,
-                 autorange = "reversed")
+
   output$secretary_plot <- renderPlotly({
     
     if (input$peers == "Secretaries"){
