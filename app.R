@@ -402,7 +402,7 @@ memory_helper <- function(post_date) {
     }
     
     else if (post_date == "January 28, 2021") {
-      memory_date <- "January 28, 2010"
+      memory_date <- "January 28, 2010."
       memory_url <- marko_url
     }
     
@@ -575,7 +575,7 @@ ui <- fluidPage(
                        heading_out("Location"),
                        br(),
                        text_link("We assume Raleigh, but he is ",
-                                 "worldwide",
+                                 "worldwide.",
                                  "https://upload.wikimedia.org/wikipedia/commons/6/6b/Rotating_globe.gif"),
                        br(),
                        text_link("On May 4th, 2019 he posted from ",
@@ -624,7 +624,7 @@ ui <- fluidPage(
                        br(),
                        br(),
                        text_link("FB introduced reactions on ",
-                                 "February 24, 2016",
+                                 "February 24, 2016.",
                                  "https://www.theverge.com/2016/2/24/11094374/facebook-reactions-like-button"),
                        br(),
                        social_helper("March 31, 2020"),
