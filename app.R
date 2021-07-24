@@ -721,6 +721,10 @@ ui <- fluidPage(
                        br(),
                        memory_helper("March 20, 2021"),
                        br(),
+                       memory_helper("June 14, 2021"),
+                       br(),
+                       memory_helper("June 20, 2021"),
+                       br(),
                        br(),
                        br(),
                        source_code()),
@@ -841,6 +845,7 @@ server <- function(input, output) {
           g1 <- g1 + ggtitle("Comments Over Time of Day") +
             scale_x_datetime("When He Tell Us?", expand = c(0,0), date_breaks = "3 hours", date_labels = hour_list)
         }
+
         g1 <- g1 + labs(caption = "Comments are numbers from original posts.")
         g1 <- g1 + geom_line(color = viridis(5)[3], size = 2) + scale_y_continuous("How Many Comments?", expand = c(0,0))
         gg_helper(g1, FALSE, FALSE, FALSE, 12)
